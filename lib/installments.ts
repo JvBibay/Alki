@@ -7,7 +7,8 @@
  * Because the interest never shrinks as you pay, the true (effective) rate is about
  * 1.8x the add-on rate.
  *
- * Rates below were taken from each bank's own pages in November 2026. Banks change them
+ * Rates below were checked against each bank's own pages in November 2026 (BPI, Metrobank and RCBC read in full;
+ * BDO's pages could not be reached, so its figures come from search results and older notices). Banks change them
  * often and many offers are promos, so every value is editable in the app.
  */
 
@@ -17,7 +18,7 @@ export const RATES_AS_OF = "November 2026";
 export const BSP_CAP = {
   rate: 1.5,
   previous: 1.0,
-  note: "BSP Circular No. 1242 (Nov 2026) raised the cap from 1% to 1.5% a month, effective 15 days after publication. Interest on unpaid balances stays capped at 3% a month.",
+  note: "BSP Circular No. 1242 (signed Nov 10, 2026) raises the cap on new card installments from 1% to 1.5% a month, taking effect 15 days after it is published (the exact date was not yet announced). Existing installments keep their agreed terms. The 3% a month cap on regular finance charges is unchanged.",
 };
 
 export type InstKind = "purchase" | "cash" | "conversion";
@@ -80,6 +81,7 @@ export const BANK_PROGRAMS: Record<string, Program[]> = {
       terms: T_SHORT,
       fee: (a) => (a <= 20000 ? 100 : 200),
       feeText: "₱100 up to ₱20,000; ₱200 above",
+      note: "Low rates are time-limited promos that BDO changes often (BDO’s regular Purchase Convert rate is 1%). Use the rate on your offer.",
     },
     {
       id: "bdo-balance-convert",
@@ -89,7 +91,7 @@ export const BANK_PROGRAMS: Record<string, Program[]> = {
       terms: T_36,
       fee: () => 350,
       feeText: "₱350",
-      note: "BDO also offers 0.69% and 0.88% special rates by invitation.",
+      note: "BDO also offers lower special rates by invitation. BDO’s fee notice lists Balance Convert but older schedules show ₱250, so check the fee on your offer.",
     },
     {
       id: "bdo-cash-installment",
@@ -108,10 +110,11 @@ export const BANK_PROGRAMS: Record<string, Program[]> = {
       name: "Installment / Credit-to-Cash",
       kind: "cash",
       rate: 1.0,
-      terms: T_36,
+      rateByTerm: { 36: 0.99 },
+      terms: [6, 12, 18, 24, 36],
       fee: (a) => (a > 50000 ? 700 : 500),
       feeText: "₱500 up to ₱50,000; ₱700 above",
-      note: "BPI lists “up to 1%” a month depending on offer and term.",
+      note: "BPI lists 1% a month, or 0.99% for 36 months; its fee table says “up to 1%”. Fees as of September 17, 2026.",
     },
     {
       id: "bpi-balance-transfer",
@@ -119,7 +122,7 @@ export const BANK_PROGRAMS: Record<string, Program[]> = {
       kind: "conversion",
       rate: 1.0,
       rateByTerm: { 36: 0.99 },
-      terms: [6, 9, 12, 18, 24, 36],
+      terms: [6, 12, 18, 24, 36],
       fee: (a) => (a > 50000 ? 700 : 500),
       feeText: "₱500 up to ₱50,000; ₱700 above",
     },
@@ -128,16 +131,35 @@ export const BANK_PROGRAMS: Record<string, Program[]> = {
       name: "Balance Conversion",
       kind: "conversion",
       rate: 1.0,
+      rateByTerm: { 36: 0.99 },
       terms: T_36,
       fee: (a) => (a > 50000 ? 700 : 500),
       feeText: "₱500 up to ₱50,000; ₱700 above",
     },
   ],
   metrobank: [
-    { id: "mb-easy", name: "Easy Installment", kind: "purchase", rate: 1.0, terms: [3, 6, 9, 12, 18, 24, 36, 48], fee: () => 0, feeText: "No fee listed" },
-    { id: "mb-balance-conversion", name: "Balance Conversion", kind: "conversion", rate: 1.0, terms: T_60, fee: () => 500, feeText: "₱500" },
-    { id: "mb-cash2go", name: "Cash2Go", kind: "cash", rate: 1.0, terms: T_60, fee: () => 350, feeText: "₱350" },
-    { id: "mb-balance-transfer", name: "Balance Transfer", kind: "conversion", rate: 1.0, terms: [6, 9, 12, 18, 24, 36, 48, 60], fee: () => 350, feeText: "₱350" },
+    { id: "mb-easy", name: "Easy Installment", kind: "purchase", rate: 1.0, terms: [3, 6, 9, 12, 18, 24, 36, 48], fee: () => 0, feeText: "No fee listed", note: "Metrobank lists 1% a month for every term." },
+    {
+      id: "mb-balance-conversion",
+      name: "Balance Conversion",
+      kind: "conversion",
+      rate: 1.0,
+      terms: T_60,
+      fee: () => 500,
+      feeText: "₱500",
+      note: "Metrobank doesn’t publish this rate or its terms online (“prevailing rates”). 1% and these terms are assumptions: use the rate on your offer.",
+    },
+    { id: "mb-cash2go", name: "Cash2Go", kind: "cash", rate: 1.0, terms: T_60, fee: () => 350, feeText: "₱350", note: "Metrobank lists “up to 1%” a month for 3–60 months (minimum ₱6,000)." },
+    {
+      id: "mb-balance-transfer",
+      name: "Balance Transfer",
+      kind: "conversion",
+      rate: 1.0,
+      terms: [6, 9, 12, 18, 24, 36, 48, 60],
+      fee: () => 350,
+      feeText: "₱350",
+      note: "Metrobank doesn’t publish this rate or its terms online (“prevailing rates”). 1% and these terms are assumptions: use the rate on your offer.",
+    },
   ],
   rcbc: [
     {
@@ -145,10 +167,20 @@ export const BANK_PROGRAMS: Record<string, Program[]> = {
       name: "InstaCash",
       kind: "cash",
       rate: 1.0,
-      terms: T_SHORT,
-      fee: () => 0,
-      feeText: "Check your offer",
-      note: "RCBC lists 1% a month for 3–24 months (longer terms by offer).",
+      terms: T_60,
+      fee: () => 500,
+      feeText: "₱500, added to your card bill (not taken from the cash)",
+      note: "RCBC lists 1% a month for 3–60 months. Offers are personal (SMS or email), so use the rate on yours.",
+    },
+    {
+      id: "rcbc-balance-conversion",
+      name: "Balance Conversion",
+      kind: "conversion",
+      rate: 1.0,
+      terms: T_36,
+      fee: () => 500,
+      feeText: "₱500",
+      note: "RCBC lists 1% a month for 3–36 months, but says your rate is personal: call RCBC to confirm.",
     },
   ],
 };

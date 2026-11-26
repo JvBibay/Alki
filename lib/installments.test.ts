@@ -49,3 +49,20 @@ test("the effective rate counts the one-time fee, and is unchanged without one",
   assert.ok(quote(6000, 0, 6, 300).effAnnual > 0);
   assert.equal(quote(6000, 0, 6, 0).effAnnual, 0);
 });
+
+test("BPI and RCBC programs match what the banks publish", () => {
+  for (const id of ["bpi-installment", "bpi-balance-transfer", "bpi-balance-conversion"]) {
+    const p = programsFor("bpi-cc").find((x) => x.id === id)!;
+    assert.equal(rateFor(p, 36), 0.99, id + " 36 months");
+    assert.equal(rateFor(p, 12), 1, id + " 12 months");
+    assert.equal(p.fee(50000), 500);
+    assert.equal(p.fee(50001), 700);
+  }
+  // Credit-to-Cash and Balance Transfer start at 6 months (no 3 or 9); Balance Conversion has 3 and 9.
+  assert.deepEqual(programsFor("bpi-cc").find((x) => x.id === "bpi-installment")!.terms, [6, 12, 18, 24, 36]);
+  assert.ok(programsFor("bpi-cc").find((x) => x.id === "bpi-balance-conversion")!.terms.includes(3));
+  const insta = programsFor("rcbc-cc").find((x) => x.id === "rcbc-instacash")!;
+  assert.equal(insta.fee(20000), 500);
+  assert.equal(Math.max(...insta.terms), 60);
+  assert.ok(programsFor("rcbc-cc").some((x) => x.id === "rcbc-balance-conversion"));
+});
