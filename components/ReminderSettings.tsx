@@ -13,9 +13,15 @@ export default function ReminderSettings({ ctx }: { ctx: Ctx }) {
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState("");
   const [push, setPush] = useState<PushStatus | null>(null);
+  // Inside the Kwenta Android app (a Capacitor web view) there is no Notification or Push API at all.
+  const [shell, setShell] = useState(false);
   const perm = typeof Notification !== "undefined" ? Notification.permission : "default";
+  // A saved "on" means nothing where notifications can't be shown, so don't claim it.
+  const working = r.enabled && support !== "none";
+  const shellHelp = "The Kwenta Android app can’t show phone notifications. Open Kwenta in Chrome and choose Add to Home screen (Install app) there, then turn reminders on. You’ll still see “Due soon” on Home.";
 
   useEffect(() => {
+    setShell(!!(window as unknown as { Capacitor?: unknown }).Capacitor);
     void reminderSupport().then(setSupport);
     void pushStatus().then(setPush);
   }, []);
@@ -62,8 +68,8 @@ export default function ReminderSettings({ ctx }: { ctx: Ctx }) {
   return (
     <div className="card securitycard">
       <div className="status">
-        <span aria-hidden="true">{r.enabled ? "🔔" : "🔕"}</span>
-        {r.enabled ? "Daily reminders are on" : "Daily reminders are off"}
+        <span aria-hidden="true">{working ? "🔔" : "🔕"}</span>
+        {working ? "Daily reminders are on" : support === "none" && r.enabled ? "Daily reminders can’t run here" : "Daily reminders are off"}
       </div>
       <p className="sub">
         Get a notification when a bill or installment is due today or tomorrow, plus an evening nudge if you haven’t logged anything. Chrome checks about once a day
@@ -72,11 +78,11 @@ export default function ReminderSettings({ ctx }: { ctx: Ctx }) {
       {support === "notify-only" && (
         <p className="sub warnt">This browser can’t check in the background. Reminders work best when Kwenta is installed from Chrome on Android. You’ll still see “Due soon” on Home.</p>
       )}
-      {support === "none" && <p className="sub warnt">This browser doesn’t support notifications. You’ll still see “Due soon” on Home.</p>}
+      {support === "none" && <p className="sub warnt">{shell ? shellHelp : "This browser doesn’t support notifications. You’ll still see “Due soon” on Home."}</p>}
       {perm === "denied" && <p className="sub warnt">Notifications are blocked for Kwenta. Allow them in your phone’s app or site settings.</p>}
 
       <div className="formrow">
-        <button className="btn sm" disabled={busy || support === "none"} onClick={() => void toggle(!r.enabled)}>
+        <button className="btn sm" disabled={busy || (support === "none" && !r.enabled)} onClick={() => void toggle(!r.enabled)}>
           {busy ? "Working…" : r.enabled ? "Turn off" : "Turn on reminders"}
         </button>
         {r.enabled && perm === "granted" && (
@@ -109,7 +115,7 @@ export default function ReminderSettings({ ctx }: { ctx: Ctx }) {
               On iPhone, first tap <b>Share</b> → <b>Add to Home Screen</b>, then open Kwenta from the Home Screen and come back here. Safari tabs can’t receive push reminders.
             </p>
           )}
-          {push === "unsupported" && <p className="sub warnt">This browser can’t receive push reminders. You’ll still see “Due soon” on Home.</p>}
+          {push === "unsupported" && <p className="sub warnt">{shell ? shellHelp : "This browser can’t receive push reminders. You’ll still see “Due soon” on Home."}</p>}
           {push === "blocked" && <p className="sub warnt">Notifications are blocked for Kwenta. Allow them in your phone’s or browser’s site settings, then try again.</p>}
           {(push === "off" || push === "on") && (
             <>

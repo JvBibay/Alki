@@ -165,11 +165,8 @@ export default function Wallet({ ctx }: { ctx: Ctx }) {
         </div>
       </header>
 
-      <div className="grid2 tight">
-        <div className="card insightcard">
-          <div className="eyebrow accent">Alki’s take</div>
-          <p>{liquidNote}</p>
-        </div>
+      {/* Full width: it used to share a two-column row with a short "Alki's take" card, which left a tall empty box on phones. */}
+      <div className="weekcard">
         <div className="card">
           <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
             <div className="eyebrow" style={{ flex: "1 1 8rem", minWidth: 0 }}>Income &amp; spending this week</div>
