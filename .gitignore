@@ -12,3 +12,8 @@ __pycache__
 android-app/**/build/
 android-app/**/.gradle/
 android-app/**/local.properties
+
+supabase/.temp/
+android-app/**/*.keystore
+android-app/**/*.jks
+*.pem
