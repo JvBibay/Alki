@@ -9,7 +9,7 @@ export default defineConfig({
   retries: 0,
   reporter: "list",
   use: {
-    actionTimeout: 8_000,
+    actionTimeout: 12_000, // first use of a page can wait on a dev-server compile
     baseURL: "http://localhost:3111",
     channel: "chrome", // uses the installed Chrome, no browser download
     viewport: { width: 390, height: 844 },

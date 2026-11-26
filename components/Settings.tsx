@@ -9,6 +9,8 @@ import type { Sealed } from "@/lib/crypto";
 import Sheet, { Modal } from "./Sheet";
 import Icon from "./Icon";
 import { DEFAULT_CUSTOM, isHex, PALETTES } from "@/lib/themes";
+import ColorPicker from "./ColorPicker";
+import { readableOn } from "@/lib/color";
 import Mascot, { ALKI_SIZES } from "./Mascot";
 import CurrencySettings from "./CurrencySettings";
 import { lookOf } from "@/lib/closet";
@@ -44,6 +46,7 @@ export default function Settings({ ctx }: { ctx: Ctx }) {
   const [installOpen, setInstallOpen] = useState(false);
   const [otherOpen, setOtherOpen] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [colorOpen, setColorOpen] = useState(false);
   useEffect(() => void flushFeedback(), []);
   const [payAccount, setPayAccount] = useState<BankAccount | null>(null);
   const accountEmail = useAccountEmail();
@@ -322,16 +325,30 @@ export default function Settings({ ctx }: { ctx: Ctx }) {
             {(s.palette || "forest") === p.id && <Icon name="check" size={22} />}
           </button>
         ))}
-        <label className="swatch custom" role="radio" aria-checked={s.palette === "custom"} title="Pick your own color" style={s.palette === "custom" ? { boxShadow: "0 0 0 3px var(--card), 0 0 0 5px var(--ink)" } : undefined}>
-          <input
-            type="color"
-            aria-label="Custom color"
-            value={isHex(s.customColor) ? s.customColor : DEFAULT_CUSTOM}
-            onChange={(e) => k.updateSettings({ palette: "custom", customColor: e.target.value })}
-          />
+        <button
+          type="button"
+          className="swatch custom"
+          role="radio"
+          aria-checked={s.palette === "custom"}
+          aria-haspopup="dialog"
+          title="Pick your own color"
+          // Once chosen, the swatch shows your color (not the rainbow) so you can see what you picked.
+          style={s.palette === "custom" && isHex(s.customColor) ? { background: s.customColor, color: readableOn(s.customColor), textShadow: "none" } : undefined}
+          onClick={() => setColorOpen(true)}
+        >
           {s.palette === "custom" ? "Custom ✓" : "Custom"}
-        </label>
+        </button>
       </div>
+      {colorOpen && (
+        <ColorPicker
+          value={isHex(s.customColor) ? s.customColor : DEFAULT_CUSTOM}
+          onClose={() => setColorOpen(false)}
+          onUse={(hex) => {
+            k.updateSettings({ palette: "custom", customColor: hex });
+            setColorOpen(false);
+          }}
+        />
+      )}
       <p className="hint">{(s.palette === "custom" ? "Custom" : PALETTES.find((p) => p.id === (s.palette || "forest"))?.name) ?? ""} · changes the header, buttons and charts.</p>
 
       <h2>Reminders</h2>
