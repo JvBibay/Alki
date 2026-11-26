@@ -1816,6 +1816,10 @@ img, svg, video { max-width: 100%; }
   .app { padding-left: 12px; padding-right: 12px; }
   .sheetbody { padding-left: 12px; padding-right: 12px; }
   .btn { padding-left: 12px; padding-right: 12px; }
+  /* Edge-to-edge strips bleed out by the page gutter, which is now 12px (not 16px), or the page scrolls sideways. */
+  .band, .quick, .phero, .billtear, .adddock { margin-left: -12px; margin-right: -12px; }
+  .quick { padding-left: 12px; padding-right: 12px; }
+  .adddock { padding-left: 12px; padding-right: 12px; }
 }
 
 /* Optional screenshot on the feedback form and in the admin list. */

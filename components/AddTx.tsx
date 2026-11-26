@@ -256,16 +256,17 @@ export default function AddTx({ ctx, initialType = "expense", edit, autoScan, in
 
   // Spending more than an account has is allowed (it may just not be logged yet), but worth a heads-up.
   const fromAcct = state.accounts.find((a) => a.id === acc);
+  const feeValue = type === "transfer" && !edit ? Math.max(0, parseFloat(fee) || 0) : 0;
   const overdrawn =
     !(split && payer === "other") && type !== "income" && value > 0 && !(type !== "transfer" && track) && fromAcct && fromAcct.kind !== "credit" && fromAcct.kind !== "locked"
       ? (() => {
-          const after = balanceAfterSpend(state, fromAcct, value, edit);
+          const after = balanceAfterSpend(state, fromAcct, value + (type === "transfer" && !edit ? feeValue : 0), edit);
           return after < 0 ? { name: fromAcct.name, after, cur: fromAcct.currency || baseCurrency(state) } : null;
         })()
       : null;
 
   // Show exactly what saving will do: each account touched, before → after.
-  const preview = previewEffect(state, { type, amount: value, acc, to: type === "transfer" ? to : undefined, toAmount: crossCurrency ? receivedValue : undefined, track }, edit);
+  const preview = previewEffect(state, { type, amount: value, acc, to: type === "transfer" ? to : undefined, toAmount: crossCurrency ? receivedValue : undefined, track, fee: feeValue }, edit);
 
   const title = edit ? "Edit entry" : type === "expense" ? "New expense" : type === "income" ? "New income" : "Transfer";
 

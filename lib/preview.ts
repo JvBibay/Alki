@@ -19,6 +19,8 @@ export interface PreviewInput {
   /** Cross-currency transfers: what arrives in the receiving account. */
   toAmount?: number;
   track?: boolean;
+  /** A transfer fee, charged to the account the money leaves. */
+  fee?: number;
 }
 
 const round = (n: number) => Math.round(n * 100) / 100;
@@ -38,7 +40,7 @@ export function previewEffect(state: State, input: PreviewInput, edit?: Tx): Pre
     const a = state.accounts.find((x) => x.id === id);
     if (!a || lines.some((l) => l.acc.id === a.id)) continue;
     const base = balance(state, a) - (edit ? effectOn(edit, a.id) : 0);
-    const delta = effectOn(draft, a.id);
+    const delta = effectOn(draft, a.id) - (input.type === "transfer" && a.id === input.acc ? Math.max(0, input.fee ?? 0) : 0);
     lines.push({ acc: a, before: shown(a, base), after: shown(a, base + delta), dir: delta >= 0 ? "in" : "out" });
   }
   return lines;

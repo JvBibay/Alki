@@ -84,3 +84,16 @@ test("custom categories by name or keyword", () => {
   assert.equal(parseEntry("pets 500", accounts, "cash", NOW, extra)!.cat, "Pets");
   assert.equal(parseEntry("lunch 180", accounts, "cash", NOW, extra)!.cat, "Food");
 });
+
+test("a sign or peso mark beside the amount does not leak into the note", () => {
+  assert.equal(parseEntry("taxi -50", accounts, "cash", NOW)!.note, "Taxi");
+  assert.equal(parseEntry("lunch ₱180", accounts, "cash", NOW)!.note, "Lunch");
+  assert.equal(parseEntry("lunch 180", accounts, "cash", NOW)!.note, "Lunch");
+});
+
+test("amounts are rounded to centavos and absurd ones are refused", () => {
+  assert.equal(parseEntry("snack 0.001", accounts, "cash", NOW), null);
+  assert.equal(parseEntry("snack 10.456", accounts, "cash", NOW)!.amount, 10.46);
+  assert.equal(parseEntry("rent 99999999999999", accounts, "cash", NOW), null);
+  assert.equal(parseEntry("bonus 999,999,999.99", accounts, "cash", NOW)!.amount, 999_999_999.99);
+});

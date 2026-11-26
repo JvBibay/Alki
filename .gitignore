@@ -17,3 +17,6 @@ supabase/.temp/
 android-app/**/*.keystore
 android-app/**/*.jks
 *.pem
+e2e-shots/
+test-results/
+playwright-report/

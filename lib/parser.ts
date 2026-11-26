@@ -83,8 +83,9 @@ export function parseEntry(
 
   const m = low.match(/(\d[\d,]*(?:\.\d+)?)(k\b)?/);
   if (!m || m.index === undefined) return null;
-  const amount = parseFloat(m[1].replace(/,/g, "")) * (m[2] ? 1000 : 1);
-  if (!amount || amount <= 0) return null;
+  // Whole centavos only, and nothing the keypad could not enter either (9 digits).
+  const amount = Math.round(parseFloat(m[1].replace(/,/g, "")) * (m[2] ? 1000 : 1) * 100) / 100;
+  if (!amount || amount <= 0 || amount >= 1_000_000_000) return null;
 
   const mentions = accounts
     .map((a) => ({ id: a.id, name: a.name, idx: low.indexOf(a.name.toLowerCase()) }))
@@ -118,6 +119,8 @@ export function parseEntry(
     note = note.replace(new RegExp(`\\b${escapeRe(a.name)}\\b`, "gi"), " ");
   }
   note = note.replace(FILLER_RE, " ").replace(/\s+/g, " ").trim();
+  // A sign, peso mark or comma left beside the amount ("taxi -50", "lunch ₱180") is not part of the note.
+  note = note.replace(/^[\s\-–—−:;,.₱$]+|[\s\-–—−:;,.₱$]+$/g, "").trim();
   if (!note) note = isIncome ? "Income" : cat;
   note = note.charAt(0).toUpperCase() + note.slice(1);
   // A category you corrected before for this payee wins over the keyword guess.

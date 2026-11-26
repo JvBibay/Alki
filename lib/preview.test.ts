@@ -53,3 +53,11 @@ test("cross-currency transfers use the amount that arrived", () => {
   const lines = previewEffect(make(), { type: "transfer", amount: 100, acc: "m", to: "g", toAmount: 7 });
   assert.equal(lines[1].after, 807);
 });
+
+test("a transfer fee comes out of the sending account only", () => {
+  const lines = previewEffect(make(), { type: "transfer", amount: 500, acc: "m", to: "g", fee: 15 });
+  assert.deepEqual(lines.map((l) => [l.acc.id, l.before, l.after]), [["m", 5000, 4485], ["g", 800, 1300]]);
+  // A fee never applies to anything but a transfer.
+  const [x] = previewEffect(make(), { type: "expense", amount: 100, acc: "g", fee: 15 });
+  assert.equal(x.after, 700);
+});
