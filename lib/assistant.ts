@@ -6,7 +6,7 @@ import { activeDeposits, depositMath, depositStatus } from "./deposits";
 import { budgetList, periodInfo } from "./budgets";
 import { parseEntry } from "./parser";
 import { detectIntent, namedAccount, usualAccount, type Intent } from "./intents";
-import { accCurrency, balance, balanceBase, baseCurrency, DAY, forecast, installmentDues, toBase, monthRange, netWorth, periodRange, startOfDay, sumRange, upcoming } from "./stats";
+import { accCurrency, addDays, balance, balanceBase, baseCurrency, DAY, forecast, installmentDues, toBase, monthRange, netWorth, periodRange, startOfDay, sumRange, upcoming } from "./stats";
 import { fmt, fmtIn } from "./format";
 
 export interface Reply {
@@ -28,8 +28,8 @@ const HELP =
 
 function rangeFromText(low: string, now: number): { from: number; to: number; label: string } {
   if (/\byesterday\b/.test(low)) {
-    const d = startOfDay(now) - DAY;
-    return { from: d, to: d + DAY, label: "yesterday" };
+    const d = addDays(startOfDay(now), -1);
+    return { from: d, to: addDays(d, 1), label: "yesterday" };
   }
   if (/\btoday\b/.test(low)) {
     const [from, to] = periodRange("day", now);

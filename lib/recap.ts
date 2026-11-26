@@ -1,5 +1,5 @@
 import type { State, Tx } from "./types";
-import { DAY, monthRange, startOfDay, sumRange, toBase } from "./stats";
+import { addDays, monthRange, startOfDay, sumRange, toBase } from "./stats";
 
 export interface MonthRecap {
   y: number;
@@ -77,10 +77,10 @@ export function monthRecap(state: State, y: number, m: number, now = Date.now())
 
   // Only count days that have already happened.
   const daysInMonth = new Date(y, m + 1, 0).getDate();
-  const lastDay = Math.min(to, startOfDay(now) + DAY);
+  const lastDay = Math.min(to, addDays(startOfDay(now), 1));
   let elapsed = 0;
   let noSpend = 0;
-  for (let d = from; d < lastDay; d += DAY) {
+  for (let d = from; d < lastDay; d = addDays(d, 1)) {
     elapsed++;
     if (!perDay.has(startOfDay(d))) noSpend++;
   }

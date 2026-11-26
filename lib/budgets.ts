@@ -3,7 +3,7 @@
  * (daily, weekly, every 2 weeks, monthly or yearly).
  */
 import type { State } from "./types";
-import { DAY, startOfDay, sumRange } from "./stats";
+import { addDays, DAY, startOfDay, sumRange } from "./stats";
 
 export type BudgetPeriod = "daily" | "weekly" | "biweekly" | "monthly" | "yearly";
 
@@ -25,16 +25,16 @@ export function periodBounds(p: BudgetPeriod, now = Date.now()): [number, number
   const d = new Date(d0);
   switch (p) {
     case "daily":
-      return [d0, d0 + DAY];
+      return [d0, addDays(d0, 1)];
     case "weekly": {
-      const start = d0 - ((d.getDay() + 6) % 7) * DAY; // Monday
-      return [start, start + 7 * DAY];
+      const start = addDays(d0, -((d.getDay() + 6) % 7)); // Monday
+      return [start, addDays(start, 7)];
     }
     case "biweekly": {
-      const weeks = Math.floor((d0 - BIWEEK_ANCHOR) / (7 * DAY));
-      const start = BIWEEK_ANCHOR + (weeks - (((weeks % 2) + 2) % 2)) * 7 * DAY;
-      const s = startOfDay(start + DAY / 2); // keep local midnight across DST
-      return [s, startOfDay(s + 14 * DAY + DAY / 2)];
+      // Count whole days (rounded, so a 23- or 25-hour day can't tip the count), then whole weeks.
+      const weeks = Math.floor(Math.round((d0 - BIWEEK_ANCHOR) / DAY) / 7);
+      const start = addDays(BIWEEK_ANCHOR, (weeks - (((weeks % 2) + 2) % 2)) * 7);
+      return [start, addDays(start, 14)];
     }
     case "yearly":
       return [new Date(d.getFullYear(), 0, 1).getTime(), new Date(d.getFullYear() + 1, 0, 1).getTime()];

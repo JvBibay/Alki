@@ -360,9 +360,9 @@ function InstallmentForm({ ctx, cards, plan, onClose }: { ctx: Ctx; cards: Accou
             <span>Total cost incl. fee</span>
             <b className="num">{fmtIn(q.totalCost, cur)}</b>
           </div>
-          {r > 0 && (
+          {(r > 0 || feeNum > 0) && (
             <div className="frow">
-              <span>True (effective) rate</span>
+              <span>True (effective) rate{feeNum > 0 ? " incl. fee" : ""}</span>
               <span className="num">
                 ≈ {q.effMonthly}%/mo · {q.effAnnual}%/yr
               </span>

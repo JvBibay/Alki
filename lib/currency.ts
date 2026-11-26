@@ -72,6 +72,12 @@ export function convert(amount: number, from: string, to: string, fx: FxState): 
   return (amount / rf) * rt;
 }
 
+/** Rounds to the currency's own decimals (2 for pesos, 0 for yen, 3 for Kuwaiti dinar). */
+export const roundIn = (n: number, code?: string) => {
+  const f = 10 ** getCurrency(code).decimals;
+  return Math.round(n * f) / f;
+};
+
 /** "1 USD = 63.68 PHP" style rate between two currencies. */
 export const pairRate = (from: string, to: string, fx: FxState) => convert(1, from, to, fx);
 

@@ -7,7 +7,7 @@ import type { Tx, TxType } from "@/lib/types";
 import { accountName, fmtIn } from "@/lib/format";
 import { previewEffect } from "@/lib/preview";
 import { accCurrency, activeAccounts, balanceAfterSpend, baseCurrency } from "@/lib/stats";
-import { convert, defaultFx, getCurrency } from "@/lib/currency";
+import { convert, defaultFx, getCurrency, roundIn } from "@/lib/currency";
 import MoneyInput from "./MoneyInput";
 import ReceiptPhoto from "./ReceiptPhoto";
 import { compressImage, savePhoto } from "@/lib/photos";
@@ -165,7 +165,7 @@ export default function AddTx({ ctx, initialType = "expense", edit, autoScan, in
   // What arrives in the other currency; prefilled at today's rate, editable to match your bank.
   const [received, setReceived] = useState(edit?.toAmount !== undefined ? String(edit.toAmount) : "");
   const [receivedEdited, setReceivedEdited] = useState(edit?.toAmount !== undefined);
-  const suggested = Math.round(convert(value, cur, toCur, state.fx ?? defaultFx()) * 100) / 100;
+  const suggested = roundIn(convert(value, cur, toCur, state.fx ?? defaultFx()), toCur);
   const receivedValue = receivedEdited ? parseFloat(received) || 0 : suggested;
   // "Split this": only for a new expense that really leaves your account, paid by you.
   const splitting = split && type === "expense" && !edit && !track;

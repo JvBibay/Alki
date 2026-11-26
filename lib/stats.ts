@@ -12,6 +12,16 @@ export const toBase = (state: State, amount: number, accId?: string) => convert(
 
 export const DAY = 86_400_000;
 
+/**
+ * `n` calendar days from `ts`, keeping the clock time. Use this instead of adding n * DAY, which is an hour off
+ * (and so misses midnight) on the two days a year the clocks change.
+ */
+export const addDays = (ts: number, n: number) => {
+  const d = new Date(ts);
+  d.setDate(d.getDate() + n);
+  return d.getTime();
+};
+
 export const startOfDay = (ts: number) => {
   const d = new Date(ts);
   d.setHours(0, 0, 0, 0);
@@ -118,10 +128,10 @@ export type Period = "day" | "week" | "month";
 
 export function periodRange(p: Period, now = Date.now()): [number, number] {
   const d0 = startOfDay(now);
-  if (p === "day") return [d0, d0 + DAY];
+  if (p === "day") return [d0, addDays(d0, 1)];
   if (p === "week") {
     const dow = (new Date(d0).getDay() + 6) % 7; // Monday first
-    return [d0 - dow * DAY, d0 + (7 - dow) * DAY];
+    return [addDays(d0, -dow), addDays(d0, 7 - dow)];
   }
   const d = new Date(now);
   return monthRange(d.getFullYear(), d.getMonth());
@@ -131,8 +141,8 @@ export function periodRange(p: Period, now = Date.now()): [number, number] {
 export function lastDays(state: State, n: number, now = Date.now()) {
   const today = startOfDay(now);
   return Array.from({ length: n }, (_, i) => {
-    const from = today - (n - 1 - i) * DAY;
-    const s = sumRange(state, from, from + DAY);
+    const from = addDays(today, -(n - 1 - i));
+    const s = sumRange(state, from, addDays(from, 1));
     return { from, expense: s.expense, income: s.income };
   });
 }
@@ -141,7 +151,7 @@ export function lastDays(state: State, n: number, now = Date.now()) {
 export function netWorthSeries(state: State, n: number, now = Date.now()) {
   const today = startOfDay(now);
   return Array.from({ length: n }, (_, i) => {
-    const end = today - (n - 1 - i) * DAY + DAY - 1;
+    const end = addDays(today, -(n - 1 - i) + 1) - 1;
     return { at: end, value: netWorth(state, end).net };
   });
 }

@@ -74,11 +74,18 @@ function Goals({ ctx }: { ctx: Ctx }) {
   function contribute(id: string, sign: 1 | -1) {
     const v = parseFloat(amounts[id] ?? "");
     if (!v || v <= 0) return;
-    k.contributeGoal(id, sign * v);
-    setAmounts((a) => ({ ...a, [id]: "" }));
     const g = state.goals.find((x) => x.id === id);
+    // You can't take out more than is saved: take what's there, and say so, instead of reporting the full amount.
+    const amount = sign < 0 && g ? Math.min(v, g.saved) : v;
+    if (amount <= 0) {
+      toast(`Nothing saved in ${g?.name ?? "this goal"} yet.`);
+      return;
+    }
+    k.contributeGoal(id, sign * amount);
+    setAmounts((a) => ({ ...a, [id]: "" }));
     if (g && sign > 0 && g.saved < g.target && g.saved + v >= g.target) toast(`🎉 You reached “${g.name}”!`);
-    else toast(sign > 0 ? `Added ${fmt(v)} to ${g?.name}` : `Took ${fmt(v)} from ${g?.name}`);
+    else if (sign > 0) toast(`Added ${fmt(v)} to ${g?.name}`);
+    else toast(amount < v ? `Only ${fmt(amount)} was saved, so I took all of it from ${g?.name}` : `Took ${fmt(amount)} from ${g?.name}`);
   }
 
   return (

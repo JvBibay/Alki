@@ -205,8 +205,22 @@ function multiIntent(state: State, text: string, now: number): Intent | null {
   return { kind: "multi", txs, hints };
 }
 
+// ---------- Lending and borrowing ----------
+
+const LOAN_RE = /\b(lent|lend|loaned|pinahiram|pinautang|nagpahiram|pahiram|pautang|borrowed|borrow|hiniram|hiram|nangutang|nag-?utang|inutang|utang ni|utang kay)\b/;
+const REPAY_RE = /\b(bayad|binayad|bayaran|binayaran|nabayaran|paid|pay|repaid|settle)\b/;
+
+/**
+ * Lending or borrowing isn't spending, and Kwenta keeps it under Debts. Chat can't create a debt yet, so rather than
+ * quietly logging "lent Migs 250" as a ₱250 expense, point to the place that records it without counting it as spending.
+ */
+function loanIntent(low: string): Intent | null {
+  if (!LOAN_RE.test(low) || REPAY_RE.test(low) || !/\d/.test(low)) return null;
+  return { kind: "say", text: "That sounds like a loan, not spending. Add it in Plan → Debts so your balance is right and it isn’t counted as an expense." };
+}
+
 /** Works out whether a (non-question) message is one of the special intents above. */
 export function detectIntent(text: string, state: State, now = Date.now()): Intent | null {
   const low = text.toLowerCase();
-  return settleIntent(state, text, low) ?? splitIntent(state, text, low, now) ?? billIntent(state, text, low, now) ?? multiIntent(state, text, now);
+  return settleIntent(state, text, low) ?? splitIntent(state, text, low, now) ?? billIntent(state, text, low, now) ?? loanIntent(low) ?? multiIntent(state, text, now);
 }

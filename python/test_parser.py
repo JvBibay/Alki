@@ -77,3 +77,14 @@ def test_note_has_no_leftover_signs_or_currency():
     assert note("lunch 180php") == "Lunch"
     assert note("lunch ₱180") == "Lunch"
     assert note("taxi -50") == "Taxi"
+
+
+def test_relative_dates_and_keywords_match_the_typescript_parser():
+    day = 86_400_000
+    r = parse_entry("coffee 110 2 days ago", ACCOUNTS, "cash", NOW)
+    assert (r["date"], r["note"]) == (NOW - 2 * day, "Coffee")
+    assert parse_entry("snacks 108 tomorrow", ACCOUNTS, "cash", NOW)["date"] == NOW + day
+    assert parse_entry("coffee 106 last week", ACCOUNTS, "cash", NOW)["date"] == NOW - 7 * day
+    assert parse_entry("paid meralco 3421", ACCOUNTS, "cash", NOW)["note"] == "Meralco"
+    assert parse_entry("pamasahe 50", ACCOUNTS, "cash", NOW)["cat"] == "Transport"
+    assert parse_entry("starbucks 200", ACCOUNTS, "cash", NOW)["cat"] == "Food"

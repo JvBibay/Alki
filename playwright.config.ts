@@ -3,7 +3,8 @@ import { defineConfig } from "@playwright/test";
 // Runs against a local dev server with the login gate off (see lib/session.ts).
 export default defineConfig({
   testDir: "./e2e",
-  timeout: 45_000,
+  timeout: 60_000,
+  workers: 2, // the dev server compiles pages on demand; more parallel browsers cause timeouts
   expect: { timeout: 6_000 },
   retries: 0,
   reporter: "list",

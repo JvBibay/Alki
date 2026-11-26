@@ -10,7 +10,7 @@ import { cleanNumber } from "./remindercard";
 import { clearPhotos, newPhotoKey } from "./photos";
 import { CARD_COLORS } from "./types";
 import { guessInst } from "./institutions";
-import { convert, defaultFx, type FxState } from "./currency";
+import { convert, defaultFx, roundIn, type FxState } from "./currency";
 import type { BudgetPeriod } from "./budgets";
 import type { CustomCat } from "./categories";
 
@@ -169,7 +169,7 @@ function withToAmount(s: State, tx: Tx): Tx {
   const from = s.accounts.find((a) => a.id === tx.acc)?.currency || base;
   const to = s.accounts.find((a) => a.id === tx.to)?.currency || base;
   if (from === to) return tx;
-  return { ...tx, toAmount: Math.round(convert(tx.amount, from, to, s.fx ?? defaultFx()) * 100) / 100 };
+  return { ...tx, toAmount: roundIn(convert(tx.amount, from, to, s.fx ?? defaultFx()), to) };
 }
 
 /** Entries an installment logged: by saved ids, or by matching notes for plans saved before ids were kept. */

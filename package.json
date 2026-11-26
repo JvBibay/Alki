@@ -7,14 +7,15 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "test": "tsx --test lib/home.test.ts lib/owed.test.ts lib/intents.test.ts lib/allowance.test.ts lib/bills.test.ts lib/parser.test.ts lib/installments.test.ts lib/crypto.test.ts lib/money.test.ts lib/currency.test.ts lib/payday.test.ts lib/recap.test.ts lib/mood.test.ts lib/budgets.test.ts lib/reminders.test.ts lib/debts.test.ts lib/receipt.test.ts lib/deposits.test.ts lib/cards.test.ts lib/cardart.test.ts lib/people.test.ts lib/backup.test.ts lib/adjust.test.ts lib/interest.test.ts lib/track.test.ts lib/remindercard.test.ts lib/qr.test.ts lib/paycard.test.ts lib/feedback.test.ts lib/reconcile.test.ts lib/preview.test.ts lib/notices.test.ts lib/upload.test.ts lib/plans.test.ts lib/names.test.ts lib/install.test.ts lib/passwords.test.ts",
+    "test": "tsx --test lib/home.test.ts lib/owed.test.ts lib/intents.test.ts lib/allowance.test.ts lib/bills.test.ts lib/parser.test.ts lib/installments.test.ts lib/crypto.test.ts lib/money.test.ts lib/currency.test.ts lib/payday.test.ts lib/recap.test.ts lib/mood.test.ts lib/budgets.test.ts lib/reminders.test.ts lib/debts.test.ts lib/receipt.test.ts lib/deposits.test.ts lib/cards.test.ts lib/cardart.test.ts lib/people.test.ts lib/backup.test.ts lib/adjust.test.ts lib/interest.test.ts lib/track.test.ts lib/remindercard.test.ts lib/qr.test.ts lib/paycard.test.ts lib/feedback.test.ts lib/reconcile.test.ts lib/preview.test.ts lib/notices.test.ts lib/upload.test.ts lib/plans.test.ts lib/names.test.ts lib/install.test.ts lib/passwords.test.ts lib/dst.test.ts",
     "logos": "tsx scripts/fetch-logos.ts",
     "logos:import": "node scripts/import-logos.mjs",
     "cards": "node scripts/build-cards.mjs",
     "emoji": "node scripts/build-emoji.mjs",
     "icons": "node scripts/build-icons.mjs",
     "ocr:assets": "node -e \"const f=require('fs');f.mkdirSync('public/ocr/lang',{recursive:true});f.copyFileSync('node_modules/tesseract.js/dist/worker.min.js','public/ocr/worker.min.js');for(const n of ['tesseract-core-lstm.wasm.js','tesseract-core-simd-lstm.wasm.js'])f.copyFileSync('node_modules/tesseract.js-core/'+n,'public/ocr/'+n);console.log('OCR engine files copied to public/ocr')\"",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "e2e:prod": "playwright test -c playwright.prod.config.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",

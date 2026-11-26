@@ -5,7 +5,7 @@ import type { Ctx } from "@/lib/ui";
 import type { Tx, TxType } from "@/lib/types";
 import { accountName, dayLabel, fmt } from "@/lib/format";
 import { catEmoji, catNames } from "@/lib/categories";
-import { activeAccounts, monthRange, periodRange, toBase } from "@/lib/stats";
+import { activeAccounts, addDays, monthRange, periodRange, toBase } from "@/lib/stats";
 import TxRow from "./TxRow";
 import Icon from "./Icon";
 import { Modal } from "./Sheet";
@@ -47,7 +47,7 @@ function periodBounds(p: Period, now = Date.now()): [number, number] | null {
     return monthRange(d.getFullYear(), d.getMonth() - 1);
   }
   const from = parseDate(p.from) ?? -Infinity;
-  const to = p.to ? parseDate(p.to)! + 86_400_000 : Infinity;
+  const to = p.to ? addDays(parseDate(p.to)!, 1) : Infinity;
   return [from, to];
 }
 
@@ -68,6 +68,9 @@ export default function History({ ctx }: { ctx: Ctx }) {
   const [sheet, setSheet] = useState<"date" | "filter" | null>(null);
 
   const needle = q.trim().toLowerCase();
+  // "1,200" and "₱180" should find those amounts: compare digits only when the search looks like a number.
+  const numNeedle = needle.replace(/[₱$,\s]/g, "");
+  const numeric = /^\d+(\.\d+)?$/.test(numNeedle) ? numNeedle : "";
   const bounds = periodBounds(period);
   const filtering = type !== "all" || acc !== "all" || cats.length > 0;
   const anything = filtering || period.kind !== "all" || !!needle;
@@ -83,7 +86,8 @@ export default function History({ ctx }: { ctx: Ctx }) {
         t.note.toLowerCase().includes(needle) ||
         t.cat.toLowerCase().includes(needle) ||
         accountName(state.accounts, t.acc).toLowerCase().includes(needle) ||
-        String(t.amount).includes(needle),
+        (!!t.to && accountName(state.accounts, t.to).toLowerCase().includes(needle)) ||
+        String(t.amount).includes(numeric || needle),
     )
     .sort((a, b) => b.date - a.date);
 

@@ -1,14 +1,16 @@
 """Natural-language transaction parser. Mirrors lib/parser.ts so both engines agree."""
 from __future__ import annotations
 
+import calendar
+import datetime
 import math
 import re
 import time
 from typing import Optional
 
 KEYWORDS: dict[str, list[str]] = {
-    "Food": ["lunch", "dinner", "breakfast", "coffee", "food", "jollibee", "mcdo", "grocery", "groceries", "snack", "meal", "milk tea", "merienda", "kape", "ulam", "rice", "pizza", "burger"],
-    "Transport": ["grab", "jeep", "jeepney", "fare", "gas", "gasoline", "taxi", "mrt", "lrt", "bus", "toll", "angkas", "tricycle", "parking", "commute"],
+    "Food": ["lunch", "dinner", "breakfast", "coffee", "starbucks", "restaurant", "foodpanda", "food", "jollibee", "mcdo", "grocery", "groceries", "snack", "meal", "milk tea", "merienda", "kape", "ulam", "rice", "pizza", "burger"],
+    "Transport": ["grab", "jeep", "jeepney", "fare", "pamasahe", "gas", "gasoline", "taxi", "mrt", "lrt", "bus", "toll", "angkas", "tricycle", "parking", "commute"],
     "Bills": ["electric", "electricity", "water", "internet", "wifi", "rent", "load", "bill", "bills", "subscription", "netflix", "spotify", "meralco", "insurance"],
     "Shopping": ["shopee", "lazada", "clothes", "shoes", "mall", "shirt", "bag", "gift"],
     "Health": ["medicine", "doctor", "gym", "vitamins", "hospital", "dentist", "checkup", "pharmacy"],
@@ -24,9 +26,50 @@ COUNT_WORD_RE = re.compile(
     r"^\s*(?:days?|weeks?|months?|years?|hours?|hrs?|mins?|minutes?|pcs?|pieces?|pax|friends?|people|persons?|kids?|items?|orders?|times|am|pm|araw|linggo|buwan|taon)\b"
 )
 CURRENCY_AFTER_RE = re.compile(r"^\s*(?:php|pesos?|piso)\b")
-DATE_PHRASE_RE = re.compile(r"\b(?:\d+\s+days?\s+ago|yesterday|kahapon)\b")
+WEEKDAYS = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"]
+WEEKDAYS_TL = ["linggo", "lunes", "martes", "miyerkules", "huwebes", "biyernes", "sabado"]
+_WD = "|".join(WEEKDAYS + WEEKDAYS_TL)
+# Relative date phrases, same as lib/parser.ts. Calendar dates like "nov 10" are not handled here: they depend on the
+# user's time zone, which this service cannot know (the browser parser handles them).
+DATE_PHRASE_RE = re.compile(
+    rf"\b(?:(?:last|on|noong|nung)\s+(?:{_WD})|\d+\s+days?\s+ago|\d+\s+araw\s+(?:ang\s+)?nakaraan|last\s+(?:week|month)"
+    r"|nakaraang\s+(?:linggo|buwan)|yesterday|kahapon|tomorrow|bukas|today|kanina|ngayon)\b",
+    re.I,
+)
+FILLER_RE = re.compile(r"\b(bayad|binayad|spent|spend|paid|pay|bought|buy|for|on|from|my|account|using|via|the|sa|ng|ko)\b", re.I)
 DAY_MS = 86_400_000
 MAX_AMOUNT = 1_000_000_000
+
+
+def _weekday_index(w: str) -> int:
+    return WEEKDAYS.index(w) if w in WEEKDAYS else WEEKDAYS_TL.index(w)
+
+
+def _find_date(low: str, now_ms: int) -> int:
+    """Mirror of findDate() in lib/parser.ts for relative phrases."""
+    if re.search(r"\b(yesterday|kahapon)\b", low):
+        return now_ms - DAY_MS
+    if re.search(r"\b(tomorrow|bukas)\b", low):
+        return now_ms + DAY_MS
+    ago = re.search(r"\b(\d+)\s+(?:days?\s+ago|araw\s+(?:ang\s+)?nakaraan)\b", low)
+    if ago:
+        return now_ms - int(ago.group(1)) * DAY_MS
+    if re.search(r"\b(last\s+week|nakaraang\s+linggo)\b", low):
+        return now_ms - 7 * DAY_MS
+    if re.search(r"\b(last\s+month|nakaraang\s+buwan)\b", low):
+        d = datetime.datetime.fromtimestamp(now_ms / 1000)
+        y, mo = (d.year - 1, 12) if d.month == 1 else (d.year, d.month - 1)
+        last = calendar.monthrange(y, mo)[1]
+        return int(d.replace(year=y, month=mo, day=min(d.day, last)).timestamp() * 1000)
+    wd = re.search(rf"\b(last|on|noong|nung)\s+({_WD})\b", low)
+    if wd:
+        target = _weekday_index(wd.group(2))
+        today = (datetime.datetime.fromtimestamp(now_ms / 1000).weekday() + 1) % 7  # JS-style: Sunday = 0
+        back = (today - target + 7) % 7
+        if back == 0 and wd.group(1) == "last":
+            back = 7
+        return now_ms - back * DAY_MS
+    return now_ms
 
 
 def _pick_amount(low: str) -> Optional[tuple[float, int, int]]:
@@ -100,12 +143,10 @@ def parse_entry(
     )
     mentions = [x for x in mentions if x["idx"] >= 0]
 
-    date = now_ms
-    if re.search(r"\b(yesterday|kahapon)\b", low):
-        date -= DAY_MS
+    date = _find_date(low, now_ms)
 
     note = text[:a_start] + " " + text[a_end:]
-    note = re.sub(r"\b(yesterday|kahapon)\b", " ", note, flags=re.I)
+    note = DATE_PHRASE_RE.sub(" ", note)
     note = re.sub(r"^\s*\+", " ", note)
 
     if re.search(r"\b(transfer|move|moved)\b", low) and len(mentions) >= 2:
@@ -127,6 +168,7 @@ def parse_entry(
 
     for a in accounts:
         note = re.sub(rf"\b{re.escape(a['name'])}\b", " ", note, flags=re.I)
+    note = FILLER_RE.sub(" ", note)
     note = re.sub(r"\s+", " ", note).strip()
     note = re.sub(r"^[\s\-–—−:;,.₱$]+|[\s\-–—−:;,.₱$]+$", "", note)
     if not note:

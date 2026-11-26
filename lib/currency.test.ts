@@ -25,3 +25,11 @@ test("formats with each currency's symbol and decimals", () => {
   assert.equal(formatMoney(1.25, "KWD"), "KWD 1.250");
   assert.equal(formatMoney(-50, "USD"), "−$50");
 });
+
+test("roundIn rounds to each currency's own decimals", async () => {
+  const { roundIn, convert, defaultFx } = await import("./currency");
+  assert.equal(roundIn(0.04888, "KWD"), 0.049);
+  assert.equal(roundIn(15939.4, "JPY"), 15939);
+  assert.equal(roundIn(12.345, "USD"), 12.35);
+  assert.equal(roundIn(convert(10, "PHP", "KWD", defaultFx()), "KWD"), 0.049);
+});

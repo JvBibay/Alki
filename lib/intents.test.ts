@@ -168,3 +168,14 @@ test("'biggest expense' names the entry instead of repeating the monthly summary
 test("'can I afford 0' asks for a real amount", () => {
   assert.match(respond("can I afford 0?", base(), NOW).text, /how much/);
 });
+
+test("lending and borrowing are not logged as spending", () => {
+  for (const t of ["lent Migs 250", "hiram ako 500 kay Ate", "pinahiram ko si Migs 300", "utang ni Migs 300", "borrowed 1000 from Ate"]) {
+    const r = respond(t, base(), NOW);
+    assert.match(r.text, /Plan → Debts/, t);
+    assert.equal(r.tx, undefined, t + " must not create an entry");
+  }
+  // Ordinary spending and repayments are unaffected.
+  assert.match(respond("lunch 180", base(), NOW).text, /Logged/);
+  assert.match(respond("bayad ko kay Ate Rica 100", base(), NOW).text, /Rica/);
+});

@@ -180,7 +180,7 @@ export interface Quote {
   interestPart: number;
   totalInterest: number;
   totalCost: number;
-  /** True monthly rate (IRR of the payments), in %. */
+  /** True monthly rate (IRR of the payments), in %. Counts the one-time fee as money you don't get to use. */
   effMonthly: number;
   /** effMonthly × 12, the way banks show it. */
   effAnnual: number;
@@ -194,7 +194,8 @@ export function quote(principal: number, ratePct: number, months: number, fee = 
   const principalPart = p / n;
   const interestPart = (p * ratePct) / 100;
   const monthly = principalPart + interestPart;
-  const eff = effectiveRate(p, monthly, n);
+  // With a fee, you effectively receive (principal - fee) for the same payments, so the true rate is higher.
+  const eff = effectiveRate(Math.max(0, p - Math.max(0, fee)), monthly, n);
   return {
     monthly: round2(monthly),
     principalPart: round2(principalPart),

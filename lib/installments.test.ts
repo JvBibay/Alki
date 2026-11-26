@@ -37,3 +37,15 @@ test("due dates keep the day and clamp short months", () => {
   assert.equal(dueDate(start, 1).getDate(), 28); // Feb 2026
   assert.equal(dueDate(start, 2).getDate(), 31); // Mar
 });
+
+test("the effective rate counts the one-time fee, and is unchanged without one", () => {
+  const noFee = quote(9999.99, 1, 7, 0);
+  const withFee = quote(9999.99, 1, 7, 350);
+  assert.ok(Math.abs(noFee.effAnnual - 20.65) < 0.1, String(noFee.effAnnual));
+  // Hand check: you get 9,649.99 for seven payments of 1,528.57, which is about 2.65% a month (31.8% a year).
+  assert.ok(Math.abs(withFee.effAnnual - 31.81) < 0.2, String(withFee.effAnnual));
+  assert.ok(withFee.effAnnual > noFee.effAnnual);
+  // A 0% plan with a fee still has a real cost.
+  assert.ok(quote(6000, 0, 6, 300).effAnnual > 0);
+  assert.equal(quote(6000, 0, 6, 0).effAnnual, 0);
+});
