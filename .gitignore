@@ -1,0 +1,14 @@
+node_modules
+.next
+next-env.d.ts
+*.tsbuildinfo
+.env*.local
+__pycache__
+.venv
+.pytest_cache
+
+.vercel
+
+android-app/**/build/
+android-app/**/.gradle/
+android-app/**/local.properties

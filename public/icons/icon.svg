@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#2f7a4d"/>
+  <circle cx="256" cy="270" r="190" fill="#3d8f5e"/>
+  <g transform="translate(136 96) scale(2)">
+    <ellipse cx="60" cy="134" rx="34" ry="4" fill="#000" opacity=".15"/>
+    <ellipse cx="44" cy="128" rx="11" ry="6" fill="#b7862a"/>
+    <ellipse cx="76" cy="128" rx="11" ry="6" fill="#b7862a"/>
+    <path d="M92 52c10-14 22-16 26-14-2 9-12 19-26 18z" fill="#6fcf97"/>
+    <path d="M93 55c7-6 14-10 22-15" stroke="#157a50" stroke-width="1.5" fill="none"/>
+    <circle cx="60" cy="27" r="11" fill="#fbbf24" stroke="#d97706" stroke-width="2.5"/>
+    <text x="60" y="32" text-anchor="middle" font-size="13" font-weight="800" fill="#b45309" font-family="Arial, sans-serif">₱</text>
+    <path d="M26 92c-8 2-12 8-12 14M94 92c8-2 12-8 14-14" stroke="#b7862a" stroke-width="7" stroke-linecap="round" fill="none"/>
+    <rect x="24" y="38" width="72" height="88" rx="20" fill="#eac15a" stroke="#b7862a" stroke-width="3"/>
+    <path d="M26 62c22 5 46 5 68 0M26 108c22 5 46 5 68 0" stroke="#c9972f" stroke-width="3" fill="none"/>
+    <rect x="49" y="40" width="22" height="5" rx="2.5" fill="#6b4a12"/>
+    <ellipse cx="38" cy="92" rx="6" ry="3.5" fill="#f59e9e" opacity=".75"/>
+    <ellipse cx="82" cy="92" rx="6" ry="3.5" fill="#f59e9e" opacity=".75"/>
+    <circle cx="46" cy="80" r="9" fill="#fff"/><circle cx="74" cy="80" r="9" fill="#fff"/>
+    <circle cx="47" cy="81" r="5" fill="#2b2118"/><circle cx="75" cy="81" r="5" fill="#2b2118"/>
+    <circle cx="49" cy="79" r="1.8" fill="#fff"/><circle cx="77" cy="79" r="1.8" fill="#fff"/>
+    <path d="M52 96c4 5 12 5 16 0" stroke="#2b2118" stroke-width="3" stroke-linecap="round" fill="none"/>
+  </g>
+</svg>
