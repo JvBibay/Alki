@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { importFile } from "./backup";
+import { importFile, toCSV } from "./backup";
 import { freshState } from "./store";
 
 const base = () => {
@@ -27,4 +27,23 @@ test("older backups without photos still import", () => {
   assert.equal(r.photos, undefined);
   assert.doesNotMatch(r.message, /photo/);
   assert.equal(r.state.txs.length, 1);
+});
+
+test("CSV export defuses formulas, and importing it gives the original notes back", () => {
+  const s = base();
+  const notes = ['=HYPERLINK("http://evil.example","click")', "@SUM(A1)", "-50 snacks", "+63 load", "plain note"];
+  s.txs = notes.map((note, i) => ({ id: "x" + i, type: "expense" as const, amount: 10 + i, cat: "Other", note, acc: "a1", date: 1000 + i }));
+  const csv = toCSV(s);
+  const cells = csv.split("\n").slice(1).map((l) => l.split(",")[4] ?? "");
+  // No text cell may start with a formula character.
+  for (const c of cells) assert.doesNotMatch(c.replace(/^"/, ""), /^[=+\-@]/);
+  const back = importFile(csv, freshState());
+  assert.deepEqual(back.state.txs.map((t) => t.note), notes);
+});
+
+test("CSV import skips absurd amounts, and a backup with a non-finite amount drops that entry", () => {
+  const csv = "date,type,amount,category,note,account\n2026-01-01,expense,5,Food,ok,Cash\n2026-01-02,expense,99999999999999,Food,huge,Cash";
+  assert.deepEqual(importFile(csv, freshState()).state.txs.map((t) => t.note), ["ok"]);
+  const raw = { ...base(), txs: [...base().txs, { id: "bad", type: "expense", amount: null, cat: "Food", note: "x", acc: "a1", date: 1 }] };
+  assert.equal(importFile(JSON.stringify(raw), freshState()).state.txs.length, 1);
 });

@@ -130,10 +130,15 @@ export default function Home({ ctx }: { ctx: Ctx }) {
       if (u) parsed.acc = u.acc;
     }
     const tx = k.addTx(parsed);
+    // Say which day it went on when that is not today, so a date that was misread (or not understood) is easy to spot.
+    const dateNote =
+      new Date(tx.date).toDateString() === new Date().toDateString()
+        ? ""
+        : ` · ${new Date(tx.date).toLocaleDateString("en-PH", { weekday: "short", month: "short", day: "numeric" })}`;
     const msg =
       tx.type === "transfer"
         ? `Moved ${fmtIn(tx.amount, accCurrency(state, tx.acc))} ${accountName(state.accounts, tx.acc)} → ${accountName(state.accounts, tx.to)}`
-        : `Logged ${fmtIn(tx.amount, accCurrency(state, tx.acc))} · ${tx.cat}`;
+        : `Logged ${fmtIn(tx.amount, accCurrency(state, tx.acc))} · ${tx.cat}${dateNote}`;
     toast(msg, () => k.removeTx(tx.id));
     setText("");
   }

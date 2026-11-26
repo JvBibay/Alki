@@ -94,6 +94,7 @@ export function respond(input: string, state: State, now = Date.now()): Reply {
   const afford = low.match(/afford\s+(?:a\s+|an\s+)?[^\d]*(\d[\d,]*(?:\.\d+)?)(k\b)?/);
   if (afford) {
     const amt = parseFloat(afford[1].replace(/,/g, "")) * (afford[2] ? 1000 : 1);
+    if (!(amt > 0)) return { text: "Tell me how much, like “can I afford 2000?”." };
     const f = forecast(state, now);
     const left = f.available - amt;
     if (left < 0) return { text: `Not right now. After your upcoming bills you’d be ${fmt(-left)} short before payday.` };
@@ -113,6 +114,15 @@ export function respond(input: string, state: State, now = Date.now()): Reply {
     const nw = netWorth(state);
     const lines = state.accounts.map((a) => `• ${a.name}: ${fmtIn(balance(state, a), accCurrency(state, a.id))}`).join("\n");
     return { text: `Your net worth is ${fmt(nw.net)}.\n${lines}` };
+  }
+
+  // "what's my biggest expense?" (before the general spending answer, which would also match "expense")
+  if (/\b(biggest|largest|highest|most expensive)\b/.test(low) && /\b(expense|expenses|spend|spending|purchase|gastos)\b/.test(low)) {
+    const r = rangeFromText(low, now);
+    const top = state.txs.filter((t) => t.type === "expense" && t.date >= r.from && t.date <= r.to).sort((a, b) => b.amount - a.amount)[0];
+    if (!top) return { text: `I don’t see any expenses ${r.label}.` };
+    const day = new Date(top.date).toLocaleDateString("en-PH", { weekday: "short", month: "short", day: "numeric" });
+    return { text: `Your biggest expense ${r.label} was ${fmt(top.amount)}: ${top.note} (${top.cat}) on ${day}.` };
   }
 
   if (/\b(spen[dt]|spending|gastos|expenses?|nagastos)\b/.test(low) && isQuestion) {

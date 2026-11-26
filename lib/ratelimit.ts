@@ -27,10 +27,16 @@ export function rateLimit(key: string, max: number, windowMs: number, now = Date
   return { ok: true, retryAfter: 0 };
 }
 
-/** The caller's address as the host reports it (Vercel sets x-forwarded-for itself), or "unknown". */
+/**
+ * The caller's address, taken only from what the host itself adds.
+ * A client can send any `x-forwarded-for` it likes, and proxies append to it, so the FIRST entry is attacker-controlled
+ * while the LAST is the one our nearest proxy recorded. Vercel's own headers are overwritten by the platform, so they come first.
+ * With no proxy in front at all, nothing here can be trusted: add a reverse proxy or the Vercel Firewall rule (see README).
+ */
 export function clientKey(req: Request): string {
-  const fwd = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
-  return (fwd || req.headers.get("x-real-ip") || "unknown").slice(0, 64);
+  const trusted = req.headers.get("x-vercel-forwarded-for") || req.headers.get("x-real-ip");
+  const hops = req.headers.get("x-forwarded-for")?.split(",").map((h) => h.trim()).filter(Boolean);
+  return (trusted?.trim() || hops?.[hops.length - 1] || "unknown").slice(0, 64);
 }
 
 /** Reads a request body as JSON but refuses to buffer more than `maxBytes` (a header can lie, so the stream is counted). */

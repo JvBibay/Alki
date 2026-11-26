@@ -1,6 +1,7 @@
 """Natural-language transaction parser. Mirrors lib/parser.ts so both engines agree."""
 from __future__ import annotations
 
+import math
 import re
 import time
 from typing import Optional
@@ -17,8 +18,49 @@ KEYWORDS: dict[str, list[str]] = {
 INCOME_RE = re.compile(
     r"\b(salary|sahod|sweldo|received|income|earned|allowance|bonus|refund|deposit|paid me|got paid|freelance)\b"
 )
-AMOUNT_RE = re.compile(r"(\d[\d,]*(?:\.\d+)?)(k\b)?")
+AMOUNT_RE = re.compile(r"(₱\s*|\bphp\s*)?(\d[\d,]*(?:\.\d+)?)(k\b)?")
+# A count or unit right after a number ("3 friends", "2 days", "5 pm") is not the price.
+COUNT_WORD_RE = re.compile(
+    r"^\s*(?:days?|weeks?|months?|years?|hours?|hrs?|mins?|minutes?|pcs?|pieces?|pax|friends?|people|persons?|kids?|items?|orders?|times|am|pm|araw|linggo|buwan|taon)\b"
+)
+CURRENCY_AFTER_RE = re.compile(r"^\s*(?:php|pesos?|piso)\b")
+DATE_PHRASE_RE = re.compile(r"\b(?:\d+\s+days?\s+ago|yesterday|kahapon)\b")
 DAY_MS = 86_400_000
+MAX_AMOUNT = 1_000_000_000
+
+
+def _pick_amount(low: str) -> Optional[tuple[float, int, int]]:
+    """Mirror of pickAmount() in lib/parser.ts: (value, start, end) of the price, or None."""
+    masked = DATE_PHRASE_RE.sub(lambda d: " " * len(d.group(0)), low)
+    best = None  # (marked, value, start, end)
+    for m in AMOUNT_RE.finditer(masked):
+        start, end = m.start(), m.end()
+        before = masked[: start + len(m.group(1) or "")]
+        after = masked[end:]
+        cur = CURRENCY_AFTER_RE.match(after)
+        glued = (
+            re.search(r"\bx$", before)
+            or re.search(r"[a-z]-$", before)
+            or re.match(r"-[a-z]", after)
+            or re.search(r"\d[/:]$", before)
+            or re.match(r"[/:]\d", after)
+            or after.startswith("%")
+            or (not m.group(3) and not cur and re.match(r"[a-z]", after) and re.search(r"[^a-z]$", before))
+        )
+        if glued or COUNT_WORD_RE.match(after):
+            continue
+        value = float(m.group(2).replace(",", "")) * (1000 if m.group(3) else 1)
+        marked = bool(m.group(1))
+        if best is None or (marked and not best[0]) or (marked == best[0] and value > best[1]):
+            best = (marked, value, start, end + (len(cur.group(0)) if cur else 0))
+    if best is None:
+        return None
+    if not math.isfinite(best[1]) or best[1] >= MAX_AMOUNT:
+        return None
+    value = round(best[1] * 100) / 100
+    if not (0 < value < MAX_AMOUNT):
+        return None
+    return value, best[2], best[3]
 
 
 def _find_category(low: str) -> str:
@@ -42,13 +84,11 @@ def parse_entry(
     low = text.lower()
     now_ms = int(time.time() * 1000) if now_ms is None else now_ms
 
-    m = AMOUNT_RE.search(low)
-    if not m:
+    picked = _pick_amount(low)
+    if not picked:
         return None
-    amount = float(m.group(1).replace(",", "")) * (1000 if m.group(2) else 1)
-    if amount <= 0:
-        return None
-    if amount.is_integer():
+    amount, a_start, a_end = picked
+    if float(amount).is_integer():
         amount = int(amount)
 
     mentions = sorted(
@@ -64,7 +104,7 @@ def parse_entry(
     if re.search(r"\b(yesterday|kahapon)\b", low):
         date -= DAY_MS
 
-    note = text[: m.start()] + " " + text[m.end():]
+    note = text[:a_start] + " " + text[a_end:]
     note = re.sub(r"\b(yesterday|kahapon)\b", " ", note, flags=re.I)
     note = re.sub(r"^\s*\+", " ", note)
 
@@ -88,6 +128,7 @@ def parse_entry(
     for a in accounts:
         note = re.sub(rf"\b{re.escape(a['name'])}\b", " ", note, flags=re.I)
     note = re.sub(r"\s+", " ", note).strip()
+    note = re.sub(r"^[\s\-–—−:;,.₱$]+|[\s\-–—−:;,.₱$]+$", "", note)
     if not note:
         note = "Income" if is_income else cat
     note = note[0].upper() + note[1:]

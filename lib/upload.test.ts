@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { assertImage, assertUploadable, imageSize, MAX_UPLOAD_BYTES, sniffImage } from "./upload";
-import { rateLimit } from "./ratelimit";
+import { clientKey, rateLimit } from "./ratelimit";
 
 const png = (w: number, h: number) => {
   const b = new Uint8Array(33);
@@ -50,4 +50,14 @@ test("the rate limiter allows a burst, then block until the window passes", () =
   assert.equal(r.ok, false);
   assert.equal(r.retryAfter, 1);
   assert.equal(rateLimit("t", 1, 1000, 1200).ok, true);
+});
+
+test("a spoofed first x-forwarded-for entry cannot pick the rate-limit key", () => {
+  const req = (h: Record<string, string>) => new Request("http://x/api/parse", { headers: h });
+  // The client sent "1.1.1.1"; our proxy recorded the real peer last.
+  assert.equal(clientKey(req({ "x-forwarded-for": "1.1.1.1, 9.9.9.9" })), "9.9.9.9");
+  assert.equal(clientKey(req({ "x-forwarded-for": "2.2.2.2, 9.9.9.9" })), "9.9.9.9");
+  // Platform headers win over anything the client could add.
+  assert.equal(clientKey(req({ "x-vercel-forwarded-for": "8.8.8.8", "x-forwarded-for": "1.1.1.1" })), "8.8.8.8");
+  assert.equal(clientKey(req({})), "unknown");
 });

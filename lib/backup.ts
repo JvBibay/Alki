@@ -57,10 +57,14 @@ export async function unlockBackup(box: Sealed, password: string) {
   return openWithPassword(password, box);
 }
 
-const esc = (v: string | number) => {
-  const s = String(v);
-  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-};
+const quote = (s: string) => (/[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s);
+/**
+ * A text cell that starts with = + - @ (or a tab / return) can run as a formula in Excel or Sheets, and notes can come
+ * from scanned receipts, imported files and friends' names. A leading apostrophe makes it plain text; the importer removes it.
+ */
+const FORMULA_START = /^[=+\-@\t\r]/;
+const textCell = (v: string) => quote(FORMULA_START.test(v) ? `'${v}` : v);
+const plainCell = (v: string) => (/^'[=+\-@\t\r]/.test(v) ? v.slice(1) : v);
 
 export function toCSV(state: State): string {
   const name = (id?: string) => state.accounts.find((a) => a.id === id)?.name ?? "";
@@ -68,7 +72,8 @@ export function toCSV(state: State): string {
   for (const t of [...state.txs].sort((a, b) => a.date - b.date)) {
     rows.push([new Date(t.date).toISOString(), t.type, String(t.amount), t.cat, t.note, name(t.acc), name(t.to)]);
   }
-  return rows.map((r) => r.map(esc).join(",")).join("\n");
+  // Columns 0 (date), 1 (type) and 2 (amount) are ours and always safe; the rest is free text.
+  return rows.map((r, i) => r.map((cell, c) => (i === 0 || c < 3 ? quote(cell) : textCell(cell))).join(",")).join("\n");
 }
 
 export function exportCSV(state: State) {
@@ -136,17 +141,17 @@ export function importFile(text: string, current: State): { state: State; messag
     const c = parseCSVLine(line);
     const amount = Math.abs(parseFloat((c[col("amount")] ?? "").replace(/[^\d.-]/g, "")));
     const date = Date.parse(c[col("date")] ?? "");
-    if (!amount || Number.isNaN(date)) continue;
+    if (!amount || !Number.isFinite(amount) || amount >= 1_000_000_000 || Number.isNaN(date)) continue;
     const rawType = (c[col("type")] ?? "expense").toLowerCase();
     const type = rawType === "income" || rawType === "transfer" ? rawType : "expense";
     txs.push({
       id: uid(),
       type,
       amount,
-      cat: c[col("category")] || (type === "income" ? "Income" : "Other"),
-      note: c[col("note")] || "Imported",
-      acc: accId(c[col("account")] ?? ""),
-      to: type === "transfer" ? accId(c[col("to_account")] ?? "") : undefined,
+      cat: plainCell(c[col("category")] ?? "") || (type === "income" ? "Income" : "Other"),
+      note: plainCell(c[col("note")] ?? "") || "Imported",
+      acc: accId(plainCell(c[col("account")] ?? "")),
+      to: type === "transfer" ? accId(plainCell(c[col("to_account")] ?? "")) : undefined,
       date,
     });
   }

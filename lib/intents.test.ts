@@ -149,3 +149,22 @@ test("a category you corrected for a payee is used the next time you type it", (
   assert.equal(multi.intent?.kind, "multi");
   if (multi.intent?.kind === "multi") assert.deepEqual(multi.intent.txs.map((t) => t.cat), ["Fun", "Transport"]);
 });
+
+test("'biggest expense' names the entry instead of repeating the monthly summary", () => {
+  const s = base();
+  s.txs = [
+    { id: "a", type: "expense", amount: 250, cat: "Transport", note: "Grab", acc: "cash", date: NOW - D },
+    { id: "b", type: "expense", amount: 90, cat: "Food", note: "Lunch", acc: "cash", date: NOW - 2 * D },
+    { id: "c", type: "transfer", amount: 9000, cat: "Transfer", note: "Transfer", acc: "cash", to: "gcash", date: NOW - D },
+  ];
+  const r = respond("What's my biggest expense?", s, NOW);
+  assert.match(r.text, /biggest expense/);
+  assert.match(r.text, /₱250/);
+  assert.match(r.text, /Grab/);
+  assert.doesNotMatch(r.text, /9,000/, "a transfer is not spending");
+  assert.match(respond("biggest expense?", base(), NOW).text, /don’t see any expenses/);
+});
+
+test("'can I afford 0' asks for a real amount", () => {
+  assert.match(respond("can I afford 0?", base(), NOW).text, /how much/);
+});

@@ -50,3 +50,30 @@ def test_http_endpoint():
     assert res.json()["result"]["cat"] == "Transport"
     bad = client.post("/parse", json={"text": "x" * 400, "accounts": ACCOUNTS, "def_acc": "cash"})
     assert bad.status_code == 422
+
+
+def test_price_is_found_even_when_other_numbers_come_first():
+    amt = lambda s: (parse_entry(s, ACCOUNTS, "cash", NOW) or {}).get("amount")
+    assert amt("7-eleven 85") == 85
+    assert amt("3 shirts 900") == 900
+    assert amt("2 coffee 150") == 150
+    assert amt("coffee x2 150") == 150
+    assert amt("jollibee 2pc chicken 199") == 199
+    assert amt("lunch with 3 friends 600") == 600
+    assert amt("bought 2 burgers for 240") == 240
+    assert amt("pizza 1/2 dozen 300") == 300
+    assert amt("2 tickets ₱1,200") == 1200
+    assert amt("lunch 180") == 180
+
+
+def test_no_price_or_absurd_price_is_refused():
+    assert parse_entry("7-eleven", ACCOUNTS, "cash", NOW) is None
+    assert parse_entry("coffee " + "9" * 400, ACCOUNTS, "cash", NOW) is None
+    assert parse_entry("snack 0.001", ACCOUNTS, "cash", NOW) is None
+
+
+def test_note_has_no_leftover_signs_or_currency():
+    note = lambda s: parse_entry(s, ACCOUNTS, "cash", NOW)["note"]
+    assert note("lunch 180php") == "Lunch"
+    assert note("lunch ₱180") == "Lunch"
+    assert note("taxi -50") == "Taxi"

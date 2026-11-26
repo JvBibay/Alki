@@ -18,14 +18,36 @@ function savedPinLength() {
   }
 }
 
+const LOCK_KEY = "kwenta-lock";
+
+/** Wrong-PIN count and the end of any wait, kept in storage so a page reload doesn't hand out fresh tries. */
+function savedLock(): { fails: number; until: number } {
+  try {
+    const v = JSON.parse(localStorage.getItem(LOCK_KEY) ?? "{}");
+    const fails = Number.isFinite(v.fails) && v.fails > 0 ? Math.floor(v.fails) : 0;
+    const until = Number.isFinite(v.until) && v.until > 0 ? v.until : 0;
+    return { fails, until };
+  } catch {
+    return { fails: 0, until: 0 };
+  }
+}
+function saveLock(fails: number, until: number) {
+  try {
+    if (fails === 0 && until === 0) localStorage.removeItem(LOCK_KEY);
+    else localStorage.setItem(LOCK_KEY, JSON.stringify({ fails, until }));
+  } catch {
+    /* storage unavailable: the in-memory count still applies */
+  }
+}
+
 /** Full-screen PIN pad shown while Kwenta is locked. */
 export default function LockScreen({ onUnlock, onErase }: { onUnlock: (pin: string) => Promise<boolean>; onErase: () => void }) {
   const [pinLen] = useState(savedPinLength);
   const [pin, setPin] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [fails, setFails] = useState(0);
-  const [waitUntil, setWaitUntil] = useState(0);
+  const [fails, setFails] = useState(() => savedLock().fails);
+  const [waitUntil, setWaitUntil] = useState(() => savedLock().until);
   const [now, setNow] = useState(Date.now());
   const [forgot, setForgot] = useState(false);
   const [eraseArmed, setEraseArmed] = useState(false);
@@ -55,16 +77,24 @@ export default function LockScreen({ onUnlock, onErase }: { onUnlock: (pin: stri
     setBusy(true);
     const ok = await onUnlock(value);
     setBusy(false);
-    if (ok) return;
+    if (ok) {
+      saveLock(0, 0);
+      return;
+    }
     const n = fails + 1;
     setFails(n);
     setPin("");
     if (n % MAX_TRIES === 0) {
       // Slow down guessing: 30s, then 60s, 90s…
-      setWaitUntil(Date.now() + (n / MAX_TRIES) * 30_000);
+      const until = Date.now() + (n / MAX_TRIES) * 30_000;
+      setWaitUntil(until);
       setNow(Date.now());
+      saveLock(n, until);
       setError("Too many tries. Please wait.");
-    } else setError(`Wrong PIN. ${MAX_TRIES - (n % MAX_TRIES)} tries left before a short wait.`);
+    } else {
+      saveLock(n, 0);
+    }
+    if (n % MAX_TRIES !== 0) setError(`Wrong PIN. ${MAX_TRIES - (n % MAX_TRIES)} tries left before a short wait.`);
   }
 
   function press(key: string) {

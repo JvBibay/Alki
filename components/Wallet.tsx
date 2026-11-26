@@ -96,8 +96,10 @@ export default function Wallet({ ctx }: { ctx: Ctx }) {
   // Card balances only: personal debts (utang) are a separate thing and aren't part of "pay off my cards".
   const cardsOwed = countedAccounts(state).filter((a) => a.kind === "credit").reduce((s, a) => s + Math.max(0, -balanceBase(state, a)), 0);
   const liquidNote =
-    liquid <= 0
-      ? "Your cash and accounts are empty. Log income or add opening balances."
+    liquid < 0
+      ? `Your cash and accounts are overdrawn by ${fmt(-liquid)}. Log the income that covers it, or fix an opening balance.`
+      : liquid === 0
+        ? "Your cash and accounts are empty. Log income or add opening balances."
       : cardsOwed > liquid
         ? "Your card balances are higher than your cash. Try paying them down first."
         : cardsOwed > 0
@@ -134,7 +136,7 @@ export default function Wallet({ ctx }: { ctx: Ctx }) {
           </div>
           <div className="bandicons" data-avoid>
             <HideButton ctx={ctx} />
-            <button className="pillbtn" onClick={addAccount}>
+            <button className="pillbtn" onClick={addAccount} aria-label="Add account">
               <Icon name="plus" size={18} /> <span className="pilltext">Add account</span>
             </button>
           </div>

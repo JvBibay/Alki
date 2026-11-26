@@ -1,7 +1,7 @@
 import { expect, type Page } from "@playwright/test";
 
 /** Clicks through onboarding with a Cash account holding `opening` pesos. */
-export async function onboard(page: Page, opening = "10000", name = "Tester") {
+export async function onboard(page: Page, opening = "10000", name = "Tester", pin?: string) {
   // The Next dev-tools badge floats over the Home tab and eats taps; it does not exist in production.
   await page.addInitScript(() => {
     const st = document.createElement("style");
@@ -16,7 +16,13 @@ export async function onboard(page: Page, opening = "10000", name = "Tester") {
   await page.getByRole("button", { name: /^Cash/ }).click();
   await page.getByPlaceholder("0").first().fill(opening);
   await page.getByRole("button", { name: "Add account" }).click();
-  await page.getByRole("button", { name: "Not now" }).click(); // PIN
+  if (pin) {
+    await page.getByPlaceholder("PIN (4–6 digits)").fill(pin);
+    await page.getByPlaceholder("Type it again").fill(pin);
+    await page.getByRole("button", { name: "Set PIN" }).click();
+  } else {
+    await page.getByRole("button", { name: "Not now" }).click();
+  }
   await page.getByRole("button", { name: "Start using Kwenta" }).click();
   await expect(page.getByText("Quick actions")).toBeVisible();
 }

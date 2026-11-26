@@ -91,7 +91,7 @@ export function normalize(raw: unknown): State | null {
   return {
     version: 2,
     accounts,
-    txs: s.txs.filter((t) => t && typeof t.amount === "number" && typeof t.date === "number"),
+    txs: s.txs.filter((t) => t && Number.isFinite(t.amount) && typeof t.amount === "number" && Number.isFinite(t.date) && typeof t.date === "number"),
     budgets: s.budgets ?? {},
     budgetPeriods: s.budgetPeriods && typeof s.budgetPeriods === "object" ? s.budgetPeriods : {},
     customCats: Array.isArray(s.customCats) ? s.customCats.filter((c) => c && typeof c.name === "string" && c.name.trim()) : [],
@@ -197,7 +197,7 @@ function findLinkedTxs(txs: Tx[], p: Installment) {
 export async function wipeLocalData() {
   try {
     // "kwenta-pin-skip" is the "Not now" choice on the optional PIN offer; a new account should be offered it again.
-    [KEY, OLD_KEY, SAFETY, PIN_LEN, PREFS, "kwenta-pin-skip", "kwenta-bio", SYNC_PASS].forEach((k) => localStorage.removeItem(k));
+    [KEY, OLD_KEY, SAFETY, PIN_LEN, PREFS, "kwenta-pin-skip", "kwenta-bio", "kwenta-lock", SYNC_PASS].forEach((k) => localStorage.removeItem(k));
   } catch {
     /* ignore */
   }
@@ -387,7 +387,7 @@ export function useKwenta() {
   const eraseEverything = useCallback(() => {
     writeSeq.current++;
     try {
-      [KEY, OLD_KEY, SAFETY, PIN_LEN, "kwenta-bio", SYNC_PASS].forEach((k) => localStorage.removeItem(k));
+      [KEY, OLD_KEY, SAFETY, PIN_LEN, "kwenta-bio", "kwenta-lock", SYNC_PASS].forEach((k) => localStorage.removeItem(k));
     } catch {
       /* ignore */
     }
