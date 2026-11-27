@@ -6,7 +6,7 @@ import type { Ctx } from "@/lib/ui";
 import { hasSpeech, listen, parseSentence } from "@/lib/ui";
 import { accCurrency, forecast, installmentDues, Period, periodRange, streak, sumRange, upcoming, type UpcomingItem } from "@/lib/stats";
 import { accountName, fmt, fmtIn, shortDate } from "@/lib/format";
-import { greeting, insight } from "@/lib/insights";
+import { greeting } from "@/lib/insights";
 import { ALKI_SIZES, LiveAlki } from "./Mascot";
 import BandScene from "./BandScene";
 import Icon from "./Icon";
@@ -25,21 +25,12 @@ import BillPay from "./BillPay";
 import TrialBanner from "./TrialBanner";
 import StatementFix from "./StatementFix";
 import type { Account } from "@/lib/types";
-import { alkiMood, type Mood } from "@/lib/mood";
+import { alkiMood } from "@/lib/mood";
 import { budgetList, paceOf, periodInfo } from "@/lib/budgets";
 import Feedback from "./Feedback";
 import { askDue, feedbackAvailable, feedbackMeta, flushFeedback, saveFeedbackMeta, snoozeFor } from "@/lib/feedback";
 
-const MOOD_LABEL: Record<Mood, string> = {
-  excited: "feeling excited",
-  happy: "feeling happy",
-  neutral: "feeling calm",
-  sleepy: "feeling sleepy",
-  worried: "feeling worried",
-  sad: "feeling sad",
-  angry: "feeling upset",
-};
-import Emoji, { EmojiText } from "./Emoji";
+import Emoji from "./Emoji";
 import Fire from "./Fire";
 
 export default function Home({ ctx }: { ctx: Ctx }) {
@@ -262,17 +253,6 @@ export default function Home({ ctx }: { ctx: Ctx }) {
         </div>
       )}
 
-      <section className="saycard card" style={{ ["--alki-w" as string]: `${alkiPx}px` }}>
-        <b>
-          Alki <Emoji e={mood.emoji} /> <span className="moodtag">{MOOD_LABEL[mood.mood]}</span>
-        </b>
-        <p>
-          <EmojiText text={mood.mood === "neutral" || mood.mood === "happy" ? insight(state) : mood.line} />
-        </p>
-        <button className="link" onClick={() => open({ kind: "chat" })}>
-          Chat with Alki ›
-        </button>
-      </section>
 
       {ask && (
         <section className="card askcard" aria-label="How is Kwenta">
