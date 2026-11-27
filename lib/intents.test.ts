@@ -125,6 +125,18 @@ test("'spent 100 and 50 on lunch' isn't mistaken for two entries", () => {
   assert.notEqual(r.intent?.kind, "multi");
 });
 
+test("a thousands comma plus a date phrase stays one entry", () => {
+  for (const [text, amount] of [["gym 1,500 last week", 1500], ["groceries 2,450 on nov 20", 2450], ["rent 12,000 last month", 12000]] as const) {
+    const r = respond(text, base(), NOW);
+    assert.notEqual(r.intent?.kind, "multi", text);
+    assert.equal(r.tx?.amount, amount, text);
+  }
+  // Real separators still split, even next to a thousands comma.
+  const r = respond("gym 1,500, jeep 24", base(), NOW);
+  assert.equal(r.intent?.kind, "multi");
+  if (r.intent?.kind === "multi") assert.deepEqual(r.intent.txs.map((t) => t.amount), [1500, 24]);
+});
+
 test("no account named: uses the one last used for that category, and says so", () => {
   const s = base();
   s.txs = [{ id: "t", type: "expense", amount: 200, cat: "Food", note: "Lunch", acc: "gcash", date: NOW - D }];

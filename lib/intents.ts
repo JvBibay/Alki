@@ -172,7 +172,8 @@ function settleIntent(state: State, text: string, low: string): Intent | null {
 
 function multiIntent(state: State, text: string, now: number): Intent | null {
   const parts = text
-    .split(/\s*(?:,|;|\band\b|\bat\b|\btapos\b)\s*/i)
+    // A comma between digits and followed by exactly three more (1,500) is a thousands separator, not a split.
+    .split(/\s*(?:(?<!\d),|,(?!\d{3}(?!\d))|;|\band\b|\bat\b|\btapos\b)\s*/i)
     .map((p) => p.trim())
     .filter(Boolean);
   if (parts.length < 2) return null;

@@ -2,9 +2,11 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { getSupabase } from "./supabase";
 
 /**
- * Plans. FREE: everything on the device, file backups, restoring/deleting an existing cloud backup.
- * PAID: saving to the cloud (backup + auto-sync). Admin accounts are exempt. The real check is in the
- * database (scripts/plans.sql); this file only decides what to show.
+ * Plans. FREE: logging, budgets, goals, cash flow, reminders, file backups, restoring/deleting an existing
+ * cloud backup, and up to FREE_ACCOUNT_LIMIT accounts.
+ * PAID: more accounts, Installments, Debts, Statistics, and saving to the cloud (backup + auto-sync).
+ * Admin accounts are exempt. Only the cloud saving is enforced in the database (scripts/plans.sql); the
+ * on-device features above are gated in the app only, since that data never leaves the phone.
  */
 
 export type PlanId = "monthly" | "annual" | "lifetime";

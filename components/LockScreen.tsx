@@ -125,7 +125,7 @@ export default function LockScreen({ onUnlock, onErase }: { onUnlock: (pin: stri
       <Mascot size={84} animated />
       <h1>Kwenta is locked</h1>
       <p className="sub">{waiting ? `Try again in ${Math.ceil((waitUntil - now) / 1000)}s` : pinLen ? `Enter your ${pinLen}-digit PIN` : "Enter your PIN"}</p>
-      <div className="pindots" aria-label={`${pin.length} digits entered`}>
+      <div className="pindots" role="img" aria-label={`${pin.length} digits entered`}>
         {Array.from({ length: pinLen || Math.max(4, pin.length) }, (_, i) => (
           <i key={i} className={i < pin.length ? "on" : ""} />
         ))}

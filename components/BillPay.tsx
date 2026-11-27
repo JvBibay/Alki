@@ -89,7 +89,7 @@ export default function BillPay({ ctx, u, onClose }: { ctx: Ctx; u: UpcomingItem
           </div>
           <div className="chips wrap" role="radiogroup" aria-label="Account">
             {accounts.map((a) => (
-              <button key={a.id} type="button" role="radio" aria-checked={acc === a.id} className="chip" aria-pressed={acc === a.id} onClick={() => setAcc(a.id)}>
+              <button key={a.id} type="button" role="radio" aria-checked={acc === a.id} className="chip" onClick={() => setAcc(a.id)}>
                 {a.name}
               </button>
             ))}

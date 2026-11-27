@@ -121,7 +121,7 @@ export default function Home({ ctx }: { ctx: Ctx }) {
     }
     const parsed = await parseSentence(input, state);
     if (!parsed) {
-      toast("Include an amount, like “lunch 180”.");
+      toast(/\d/.test(input) ? "I couldn’t use that amount. It may be too large. Try something like “lunch 180”." : "Include an amount, like “lunch 180”.");
       return;
     }
     // No account named: use the one you usually use for this payee or category.
@@ -402,9 +402,9 @@ export default function Home({ ctx }: { ctx: Ctx }) {
       <div className="sectionhead">
         <h2>Quick actions</h2>
       </div>
-      <div className="quick" role="list">
+      <div className="quick">
         {(moreActions ? quick : quick.slice(0, 4)).map((q) => (
-          <button key={q.label} className="qbtn" onClick={q.onClick} role="listitem">
+          <button key={q.label} className="qbtn" onClick={q.onClick}>
             <span className="qico"><Emoji e={q.icon} /></span>
             {q.label}
           </button>

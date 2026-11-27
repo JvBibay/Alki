@@ -599,7 +599,7 @@ function AccountChips({ accounts, value, onChange }: { accounts: Account[]; valu
   return (
     <div className="accchips" role="radiogroup" ref={row}>
       {accounts.map((a) => (
-        <button key={a.id} type="button" className="accchip" role="radio" aria-checked={value === a.id} aria-pressed={value === a.id} onClick={() => onChange(a.id)}>
+        <button key={a.id} type="button" className="accchip" role="radio" aria-checked={value === a.id} onClick={() => onChange(a.id)}>
           <BankLogo account={a} size={28} />
           {a.name}
         </button>

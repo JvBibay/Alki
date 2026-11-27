@@ -75,17 +75,6 @@ export default function TxRow({ tx, accounts, onDelete, onEdit, showDate }: { tx
       onPointerMove={move}
       onPointerUp={up}
       onPointerCancel={up}
-      role={onEdit ? "button" : undefined}
-      tabIndex={onEdit ? 0 : undefined}
-      onKeyDown={
-        onEdit
-          ? (e) => {
-              if (e.key === "Enter" || e.key === " ") (e.preventDefault(), onEdit());
-              else if (onDelete && (e.key === "Delete" || e.key === "Backspace")) (e.preventDefault(), onDelete());
-            }
-          : undefined
-      }
-      aria-label={onEdit ? `Edit ${tx.note}. Swipe left for more actions.` : undefined}
     >
       <div className="ico" style={{ background: `color-mix(in srgb, ${tint} 16%, transparent)`, color: tint }}>
         <Emoji e={icon} />
@@ -95,7 +84,21 @@ export default function TxRow({ tx, accounts, onDelete, onEdit, showDate }: { tx
           </span>
         )}
       </div>
-      <div className="main">
+      {/* The editable part is its own button, so the Delete button beside it isn't nested inside another control. */}
+      <div
+        className={`main${onEdit ? " rowmain" : ""}`}
+        role={onEdit ? "button" : undefined}
+        tabIndex={onEdit ? 0 : undefined}
+        aria-label={onEdit ? `Edit ${tx.note}, ${sign}${fmtIn(tx.amount, cur)}, ${sub}` : undefined}
+        onKeyDown={
+          onEdit
+            ? (e) => {
+                if (e.key === "Enter" || e.key === " ") (e.preventDefault(), onEdit());
+                else if (onDelete && (e.key === "Delete" || e.key === "Backspace")) (e.preventDefault(), onDelete());
+              }
+            : undefined
+        }
+      >
         <div className="t">
           {tx.note}
           {tx.photo && <span className="clip" title="Has a receipt photo"> <Emoji e="📎" /></span>}

@@ -148,7 +148,7 @@ export default function PayCard({ ctx, card, onClose }: { ctx: Ctx; card: Accoun
               const acur = a.currency || baseCurrency(state);
               const picked = from === a.id;
               return (
-                <button key={a.id} type="button" className="pc-acc" role="radio" aria-checked={picked} aria-pressed={picked} onClick={() => setFrom(a.id)}>
+                <button key={a.id} type="button" className="pc-acc" role="radio" aria-checked={picked} onClick={() => setFrom(a.id)}>
                   <BankLogo account={a} size={36} />
                   <span className="main">
                     <b>{a.name}</b>

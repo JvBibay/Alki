@@ -159,7 +159,7 @@ input:focus-visible, select:focus-visible, button:focus-visible { outline: 3px s
   padding: 7px 12px; border-radius: 99px; font-size: 0.85rem; font-weight: 700;
   background: var(--accent-soft); color: var(--accent); border: 1.5px solid transparent; width: auto;
 }
-.chip[aria-selected="true"], .chip[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+.chip[aria-selected="true"], .chip[aria-pressed="true"], .chip[role="radio"][aria-checked="true"] { background: var(--accent); color: var(--accent-ink); }
 select.chip { padding-right: 8px; }
 .pillbtn { display: inline-flex; align-items: center; gap: 6px; padding: 9px 14px; border-radius: 99px; background: rgba(255,255,255,.16); color: var(--band-ink); font-weight: 700; font-size: 0.88rem; }
 
@@ -270,7 +270,7 @@ select.chip { padding-right: 8px; }
   background: var(--accent-soft);
   border-radius: 20px; padding: 16px; box-shadow: var(--shadow); border: 1.5px solid color-mix(in srgb, var(--accent) 20%, transparent);
 }
-.payday .eyebrow { color: var(--accent); }
+.payday .eyebrow { color: color-mix(in srgb, var(--accent) 78%, var(--ink)); } /* a touch darker than the accent so the small label clears 4.5:1 on the tinted card */
 .payday .big { font-size: 1.5rem; font-weight: 900; }
 .payday .right { text-align: right; }
 .allowbreak { margin-top: 8px; padding: 6px 14px 10px; }
@@ -541,7 +541,7 @@ nav {
 .accchips { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding-bottom: 4px; }
 .accchips::-webkit-scrollbar { display: none; }
 .accchip { display: flex; align-items: center; gap: 8px; padding: 6px 12px 6px 6px; border-radius: 14px; background: var(--card); border: 2px solid var(--line); font-weight: 700; font-size: 0.86rem; white-space: nowrap; flex: none; }
-.accchip[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+.accchip[aria-pressed="true"], .accchip[aria-checked="true"] { border-color: var(--accent); background: var(--accent-soft); }
 .ico { position: relative; }
 .ico .accbadge { position: absolute; right: -4px; bottom: -4px; box-shadow: 0 0 0 2px var(--card); border-radius: 6px; display: grid; }
 @media (max-width: 380px) { .instgrid { grid-template-columns: repeat(3, 1fr); } }
@@ -1019,7 +1019,8 @@ body.privacy-hide .app, body.privacy-hide .sheet, body.privacy-hide nav { filter
 
 /* Tap an entry to edit it */
 .row.tappable { cursor: pointer; border-radius: 12px; transition: background 0.15s; }
-.row.tappable:hover, .row.tappable:focus-visible { background: var(--card2); }
+.row.tappable:hover, .row.tappable:focus-visible, .row.tappable:has(.rowmain:focus-visible) { background: var(--card2); }
+.rowmain { outline-offset: 2px; }
 .row.tappable:active { background: var(--accent-soft); }
 .editnote { background: var(--accent-soft); padding: 10px 12px; border-radius: 12px; color: var(--ink); }
 

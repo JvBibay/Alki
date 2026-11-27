@@ -13,7 +13,7 @@ export default function ProGate({ ctx, what }: { ctx: Ctx; what: string }) {
         <p style={{ fontSize: 28, margin: 0 }} aria-hidden>
           🔒
         </p>
-        <b>{what} is part of a paid plan</b>
+        <b>{what} are part of a paid plan</b>
         <p className="sub" style={{ margin: "6px 0 12px" }}>
           The free plan keeps tracking, budgets, goals and cash flow. Choose monthly, annual or lifetime to unlock this.
         </p>

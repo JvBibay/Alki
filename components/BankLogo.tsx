@@ -22,7 +22,7 @@ export default function BankLogo({ account, inst, size = 36 }: { account?: Accou
     const app = LOGOS[i.logo].includes(".app.");
     return (
       <span className={`banklogo${app ? " app" : ""}`} style={{ ...box, padding: app ? 0 : Math.round(size * 0.08) }}>
-        <img src={`/logos/${LOGOS[i.logo]}`} alt={label} width={size} height={size} loading="lazy" />
+        <img src={`/logos/${LOGOS[i.logo]}`} alt="" width={size} height={size} loading="lazy" />
       </span>
     );
   }

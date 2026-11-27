@@ -186,12 +186,12 @@ export default function ReminderCard({ ctx, p, onClose }: { ctx: Ctx; p: PersonS
             </div>
             <div className="accchips" role="radiogroup" aria-label="Pay into">
               {methods.map((m) => (
-                <button key={m.id} type="button" className="accchip" role="radio" aria-checked={methodId === m.id} aria-pressed={methodId === m.id} onClick={() => setMethodId(m.id)}>
+                <button key={m.id} type="button" className="accchip" role="radio" aria-checked={methodId === m.id} onClick={() => setMethodId(m.id)}>
                   {m.account ? <BankLogo account={m.account} size={28} /> : null}
                   {m.label}
                 </button>
               ))}
-              <button type="button" className="accchip" role="radio" aria-checked={methodId === ""} aria-pressed={methodId === ""} onClick={() => setMethodId("")}>
+              <button type="button" className="accchip" role="radio" aria-checked={methodId === ""} onClick={() => setMethodId("")}>
                 No payment details
               </button>
             </div>
