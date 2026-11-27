@@ -6,9 +6,16 @@
 # The APK is a thin Android shell (Capacitor) that opens your DEPLOYED Kwenta website full screen, so it always
 # shows the latest version and the server pieces (receipt scan API, sign-in) keep working. It needs internet for
 # the first load; after that the site's own offline cache applies. -Url must be your live https address.
+#
+# Reminders: the app's web view cannot show web notifications, so the APK includes Capacitor's Local Notifications
+# plugin and Kwenta (the website) schedules reminders through it (lib/nativeReminders.ts). The notification icon
+# (android-app\overrides\res\drawable\ic_stat_kwenta.xml) is copied into the Android project below.
 param(
   [Parameter(Mandatory = $true)][string]$Url,
   [string]$AppId = "app.kwenta.android",
+  # Android only lets an APK replace an installed one when its versionCode is higher, so raise this with every release.
+  [int]$VersionCode = 2,
+  [string]$VersionName = "1.1",
   [switch]$Install
 )
 
@@ -61,6 +68,7 @@ $config = @{
   webDir    = "www"
   server    = @{ url = $Url; cleartext = $false; allowNavigation = @($hostName, "*.supabase.co") }
   android   = @{ allowMixedContent = $false }
+  plugins   = @{ LocalNotifications = @{ smallIcon = "ic_stat_kwenta"; iconColor = "#2F7A4D" } }
 } | ConvertTo-Json -Depth 5
 Set-Content -Path "capacitor.config.json" -Value $config -Encoding utf8
 
@@ -74,6 +82,14 @@ node scripts\android-icons.mjs
 $iconCode = $LASTEXITCODE
 Pop-Location
 if ($iconCode) { Write-Host "Couldn't write the app icon (the APK would use the default one)." -ForegroundColor Red; exit 1 }
+
+# Our own Android resources (the notification icon), and the version number.
+Copy-Item (Join-Path $app "overrides\res\*") (Join-Path $app "android\app\src\main\res") -Recurse -Force
+$gradleFile = Join-Path $app "android\app\build.gradle"
+$gradleText = Get-Content $gradleFile -Raw
+$gradleText = $gradleText -replace 'versionCode \d+', "versionCode $VersionCode"
+$gradleText = $gradleText -replace 'versionName "[^"]*"', "versionName `"$VersionName`""
+Set-Content -Path $gradleFile -Value $gradleText -Encoding ascii -NoNewline
 
 # Tell Gradle where the SDK is.
 Set-Content -Path "android\local.properties" -Value ("sdk.dir=" + ($sdk -replace "\\", "/")) -Encoding ascii

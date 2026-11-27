@@ -34,6 +34,7 @@ import Onboarding from "@/components/Onboarding";
 import { accountOnboarded } from "@/lib/onboarded";
 import { reminderPayload, saveReminderData } from "@/lib/reminders";
 import { usePushSync } from "@/lib/push";
+import { useNativeReminders } from "@/lib/nativeReminders";
 import { cleanupPhotos } from "@/lib/photos";
 import { lookOf } from "@/lib/closet";
 import ClosetSheet from "@/components/ClosetSheet";
@@ -71,6 +72,8 @@ function App() {
   useAutoSync(k.state, k.ready && !k.locked && access.active);
   // Push reminders (only if turned on for this device): keeps the server's wake-up times current.
   usePushSync(k.state, k.ready && !k.locked);
+  // Inside the Android app, the phone itself shows the reminders: keep what is scheduled there current.
+  useNativeReminders(k.state, k.ready && !k.locked);
   // Arrived from a password-reset link (the gate flagged it): open Settings → Account to set a new password.
   useEffect(() => {
     try {

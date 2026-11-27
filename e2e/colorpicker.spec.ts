@@ -52,10 +52,11 @@ test("custom color dialog: hex, sliders, validation, cancel and use", async ({ p
   await dlg(page).getByRole("textbox").fill("#2f6fed");
   await dlg(page).getByRole("button", { name: "Use color" }).click();
   await expect(dlg(page)).toHaveCount(0);
-  expect(await custom(page)).toBe("#2f6fed");
+  // The theme variable is set by an effect a moment after the dialog closes (and after a reload), so wait for it.
+  await expect.poll(() => custom(page)).toBe("#2f6fed");
   await expect(page.getByRole("radio", { name: /Custom/ })).toHaveAttribute("aria-checked", "true");
   await page.reload();
-  expect(await custom(page)).toBe("#2f6fed");
+  await expect.poll(() => custom(page)).toBe("#2f6fed");
 
   // Reopening starts from the saved color.
   await openPicker(page);

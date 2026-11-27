@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import type { Ctx } from "@/lib/ui";
 import { disablePush, enablePush, pushStatus, type PushStatus } from "@/lib/push";
+import { cancelNativeReminders, inAndroidApp, nativePermission, nativeRemindersAvailable, requestNativePermission, sendNativeTest, syncNativeReminders, type NativePermission } from "@/lib/nativeReminders";
 import { CARD_LEADS, cardLead, disableReminders, dueSoon, enableReminders, reminderSupport, testNotification, whenText, type ReminderSupport } from "@/lib/reminders";
 
 /** Settings → Reminders: daily background notifications (Android) with a test button. */
@@ -13,17 +14,25 @@ export default function ReminderSettings({ ctx }: { ctx: Ctx }) {
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState("");
   const [push, setPush] = useState<PushStatus | null>(null);
-  // Inside the Kwenta Android app (a Capacitor web view) there is no Notification or Push API at all.
+  // Inside the Kwenta Android app (a web view) there is no Notification or Push API: reminders go through Android itself.
   const [shell, setShell] = useState(false);
-  const perm = typeof Notification !== "undefined" ? Notification.permission : "default";
+  const [native, setNative] = useState(false);
+  const [nativePerm, setNativePerm] = useState<NativePermission>("prompt");
+  const perm = native ? (nativePerm === "prompt" ? "default" : nativePerm) : typeof Notification !== "undefined" ? Notification.permission : "default";
   // A saved "on" means nothing where notifications can't be shown, so don't claim it.
   const working = r.enabled && support !== "none";
-  const shellHelp = "The Kwenta Android app can’t show phone notifications. Open Kwenta in Chrome and choose Add to Home screen (Install app) there, then turn reminders on. You’ll still see “Due soon” on Home.";
+  const shellHelp = "This version of the Kwenta Android app can’t show phone notifications. Install the latest Kwenta app (APK), or open Kwenta in Chrome and choose Add to Home screen there. You’ll still see “Due soon” on Home.";
 
   useEffect(() => {
-    setShell(!!(window as unknown as { Capacitor?: unknown }).Capacitor);
-    void reminderSupport().then(setSupport);
-    void pushStatus().then(setPush);
+    setShell(inAndroidApp());
+    if (nativeRemindersAvailable()) {
+      setNative(true);
+      setSupport("full");
+      void nativePermission().then(setNativePerm);
+    } else {
+      void reminderSupport().then(setSupport);
+      void pushStatus().then(setPush);
+    }
   }, []);
 
   async function togglePush(on: boolean) {
@@ -39,7 +48,39 @@ export default function ReminderSettings({ ctx }: { ctx: Ctx }) {
     setBusy(false);
   }
 
+  async function toggleNative(on: boolean) {
+    setBusy(true);
+    try {
+      if (on) {
+        const p = await requestNativePermission();
+        setNativePerm(p);
+        if (p !== "granted") {
+          const msg = "Notifications are blocked. In Android Settings → Apps → Kwenta → Notifications, turn them on, then try again.";
+          setNote(msg);
+          toast(msg);
+          return;
+        }
+        const next = { ...r, enabled: true };
+        k.updateSettings({ reminders: next });
+        await syncNativeReminders({ ...k.state, settings: { ...k.state.settings, reminders: next } });
+        const msg = "Daily reminders are on. Android shows them at 9:00 on days something is due, even when Kwenta is closed.";
+        setNote(msg);
+        toast(msg);
+      } else {
+        await cancelNativeReminders();
+        k.updateSettings({ reminders: { ...r, enabled: false } });
+        setNote("");
+        toast("Daily reminders turned off.");
+      }
+    } catch {
+      toast("Couldn’t change reminders. Try again.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function toggle(on: boolean) {
+    if (native) return toggleNative(on);
     setBusy(true);
     if (on) {
       const res = await enableReminders();
@@ -58,8 +99,10 @@ export default function ReminderSettings({ ctx }: { ctx: Ctx }) {
   async function test() {
     const next = dueSoon(k.state, Date.now(), 7)[0];
     try {
-      await testNotification(next ? `${r.names ? next.title : "A payment"}: ${whenText(next.daysLeft).toLowerCase()}` : "This is how your reminders will look. 🪙");
-      toast("Test notification sent.");
+      const body = next ? `${r.names ? next.title : "A payment"}: ${whenText(next.daysLeft).toLowerCase()}` : "This is how your reminders will look. 🪙";
+      if (native) await sendNativeTest(body);
+      else await testNotification(body);
+      toast(native ? "Test notification sent. It should appear in a few seconds." : "Test notification sent.");
     } catch {
       toast("Couldn’t show a notification. Check that notifications are allowed for Kwenta.");
     }
@@ -72,14 +115,18 @@ export default function ReminderSettings({ ctx }: { ctx: Ctx }) {
         {working ? "Daily reminders are on" : support === "none" && r.enabled ? "Daily reminders can’t run here" : "Daily reminders are off"}
       </div>
       <p className="sub">
-        Get a notification when a bill or installment is due today or tomorrow, plus an evening nudge if you haven’t logged anything. Chrome checks about once a day
-        (it picks the exact time).
+        Get a notification when a bill or installment is due today or tomorrow, plus an evening nudge if you haven’t logged anything.{" "}
+        {native ? "Your phone shows them at 9:00 on days something is due, even when Kwenta is closed." : "Chrome checks about once a day (it picks the exact time)."}
       </p>
       {support === "notify-only" && (
         <p className="sub warnt">This browser can’t check in the background. Reminders work best when Kwenta is installed from Chrome on Android. You’ll still see “Due soon” on Home.</p>
       )}
       {support === "none" && <p className="sub warnt">{shell ? shellHelp : "This browser doesn’t support notifications. You’ll still see “Due soon” on Home."}</p>}
-      {perm === "denied" && <p className="sub warnt">Notifications are blocked for Kwenta. Allow them in your phone’s app or site settings.</p>}
+      {perm === "denied" && (
+        <p className="sub warnt">
+          {native ? "Notifications are blocked for Kwenta. In Android Settings → Apps → Kwenta → Notifications, turn them on." : "Notifications are blocked for Kwenta. Allow them in your phone’s app or site settings."}
+        </p>
+      )}
 
       <div className="formrow">
         <button className="btn sm" disabled={busy || (support === "none" && !r.enabled)} onClick={() => void toggle(!r.enabled)}>

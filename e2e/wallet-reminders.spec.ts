@@ -18,10 +18,10 @@ test("Wallet: no 'Alki's take' card, and the weekly chart spans the full width",
   await page.screenshot({ path: "e2e-shots/wallet-fullwidth.png" });
 });
 
-test("Reminders: where notifications are unsupported (Android app web view), it does not claim to be on", async ({ page }) => {
+test("Reminders: in an older Android app (no notifications plugin) it says so instead of claiming to work", async ({ page }) => {
   await page.addInitScript(() => {
-    // Looks like the Capacitor shell: a native bridge object, and no Notification or Push API.
-    (window as unknown as { Capacitor: object }).Capacitor = {};
+    // The Capacitor shell is there, but this build of the app has no LocalNotifications plugin, and no web Notification API.
+    (window as unknown as { Capacitor: object }).Capacitor = { PluginHeaders: [{ name: "App" }], nativePromise: async () => ({}) };
     delete (window as unknown as { Notification?: unknown }).Notification;
     delete (window as unknown as { PushManager?: unknown }).PushManager;
   });
@@ -29,6 +29,6 @@ test("Reminders: where notifications are unsupported (Android app web view), it 
   await page.getByRole("button", { name: "Open menu" }).click();
   await page.getByRole("menuitem", { name: "Settings" }).click();
   await expect(page.getByText("Daily reminders are off")).toBeVisible();
-  await expect(page.getByText(/Kwenta Android app can.t show phone notifications/).first()).toBeVisible();
+  await expect(page.getByText(/This version of the Kwenta Android app can.t show phone notifications/).first()).toBeVisible();
   await expect(page.getByText("Daily reminders are on")).toHaveCount(0);
 });

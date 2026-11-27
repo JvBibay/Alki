@@ -291,4 +291,31 @@ export async function testNotification(body: string) {
   else new Notification("Kwenta reminder", opts);
 }
 
+/**
+ * What to say about what's due on `today` (a start-of-day timestamp), or null when nothing is. The same wording the
+ * service worker builds in public/sw.js (dueNotification), so Chrome and the Android app read alike.
+ * Snoozed items wait for their return day.
+ */
+export function dueNotification(data: Pick<ReminderPayload, "items">, today: number): { title: string; body: string } | null {
+  // An item may notify from its own start day (cards can start earlier).
+  const ready = data.items.filter((i) => (i.from ?? i.due - DAY) <= today && (i.hideUntil ?? 0) <= today);
+  const stmts = ready.filter((i) => i.kind === "statement");
+  const due = ready.filter((i) => i.kind !== "statement");
+  if (!due.length && !stmts.length) return null;
+  const overdue = due.filter((i) => i.due < today);
+  const lines = [
+    ...stmts.map((i) => `• ${i.title}: ready, check the balance`),
+    ...due.map((i) => {
+      const d = Math.round((i.due - today) / DAY);
+      return `• ${i.title}: ${d < 0 ? "overdue" : d === 0 ? "due today" : d === 1 ? "due tomorrow" : `due in ${d} days`}`;
+    }),
+  ];
+  return {
+    title: overdue.length ? "Kwenta: payment overdue ⚠️" : due.length ? "Kwenta: payment due soon" : "Kwenta: statement ready",
+    body: lines.slice(0, 4).join("\n") + (lines.length > 4 ? `\n+${lines.length - 4} more` : ""),
+  };
+}
+
+export const NUDGE_NOTICE = { title: "Alki misses you 🪙", body: "Nothing logged today yet. Takes 5 seconds: tell me what you spent!" };
+
 export const ONE_DAY = DAY;

@@ -214,6 +214,22 @@ Setup (once):
 Without step 5 the option stays hidden and nothing else changes. Code: `lib/push.ts`, `lib/reminders.ts`
 (`wakeTimes`), the `push` handler in `public/sw.js`, `supabase/functions/send-reminders`.
 
+## Android app (APK)
+
+`kwenta.apk` is a thin Android shell (Capacitor, `android-app/`) that opens the deployed website full screen. Build it
+on Windows with `powershell -ExecutionPolicy Bypass -File scripts\build-apk.ps1 -Url https://your-kwenta.vercel.app`
+(needs Java 17 to 23 and the Android SDK). Raise `-VersionCode` with every release: Android only lets an APK replace an
+installed one when its version code is higher, and the APK is signed with your machine's debug key, so build every
+release on the same machine.
+
+**Reminders in the app.** The app's web view has no web Notification or Push API, so the APK bundles Capacitor's Local
+Notifications plugin. Kwenta works out what is due, and schedules the next 7 days of reminders (9:00 for bills,
+installments, debts, card payments and deposits; 8 pm nudge for the next 3 evenings) with Android itself, so they appear
+even when the app is closed and need no server or sign-in. They are refreshed whenever the app opens or something changes.
+Settings → Reminders → *Turn on reminders* asks Android for permission. An older APK without the plugin shows a message
+asking to install the latest one. Code: `lib/nativeReminders.ts`, `components/ReminderSettings.tsx`. The notification icon is
+`android-app/overrides/res/drawable/ic_stat_kwenta.xml`.
+
 ## Security & privacy
 
 - **Data stays on the device.** No server stores money data; Vercel only serves the app files. (Optional cloud backup is encrypted in the browser. Optional push reminders store only device addresses and wake-up times.)
